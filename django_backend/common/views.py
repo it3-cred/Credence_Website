@@ -7,6 +7,8 @@ def healthCheck(request):
     db_status = "ok"
 
     try:
+        # Ensure the connection is usable; with CONN_HEALTH_CHECKS this avoids stale connections.
+        connection.ensure_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()

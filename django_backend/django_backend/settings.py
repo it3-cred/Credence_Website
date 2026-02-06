@@ -106,6 +106,13 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD", default=""),
         "HOST": env("POSTGRES_HOST", default="localhost"),
         "PORT": env("POSTGRES_PORT", default="5432"),
+        # Psycopg v3 connection pool
+        "OPTIONS": {
+            "pool": True,
+        },
+        # Persistent connections (seconds)
+        "CONN_MAX_AGE": env.int("POSTGRES_CONN_MAX_AGE", default=60),
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 
