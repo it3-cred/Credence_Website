@@ -1,0 +1,76 @@
+# --- Global / OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.crt
+secrets/
+
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+venv/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+.python-version
+
+# Django specific
+django_backend/.env
+django_backend/db.sqlite3
+django_backend/*.sqlite3
+django_backend/media/
+django_backend/staticfiles/
+
+# --- Node / Next.js ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp*
+.npmrc
+.yarnrc
+.yarn/
+.next/
+out/
+dist/
+nextjs_frontend/.env
+nextjs_frontend/.env.*
+nextjs_frontend/.next/
+nextjs_frontend/out/
+nextjs_frontend/node_modules/
+
+# --- Build / coverage ---
+coverage/
+*.lcov
+.coverage
+htmlcov/
+*.map
+
+# --- IDE ---
+.idea/
+.vscode/
+*.code-workspace
