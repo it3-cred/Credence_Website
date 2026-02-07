@@ -1,5 +1,17 @@
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator, MaxLengthValidator, MinLengthValidator, RegexValidator
 from django.db import models
+
+MAX_IMAGE_FILE_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+ANNOUNCEMENT_TEXT_MAX_LENGTH = 60
+SUMMARY_MAX_LENGTH = 500
+
+
+def validate_image_file_size(value):
+    if not value:
+        return
+    if value.size > MAX_IMAGE_FILE_SIZE_BYTES:
+        raise ValidationError("Image file size must be 2 MB or less.")
 
 
 class AnnouncementRibbon(models.Model):
@@ -8,7 +20,12 @@ class AnnouncementRibbon(models.Model):
         validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Message cannot be blank.")],
     )
     text = models.TextField(
-        validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Text cannot be blank.")],
+        max_length=ANNOUNCEMENT_TEXT_MAX_LENGTH,
+        validators=[
+            MinLengthValidator(1),
+            MaxLengthValidator(ANNOUNCEMENT_TEXT_MAX_LENGTH),
+            RegexValidator(r".*\S.*", "Text cannot be blank."),
+        ],
     )
     link_url = models.URLField(max_length=500, blank=True)
     starts_at = models.DateTimeField(null=True, blank=True)
@@ -25,13 +42,25 @@ class Achievement(models.Model):
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Title cannot be blank.")],
     )
     summary = models.TextField(
-        validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Summary cannot be blank.")],
+        validators=[
+            MinLengthValidator(1),
+            MaxLengthValidator(SUMMARY_MAX_LENGTH),
+            RegexValidator(r".*\S.*", "Summary cannot be blank."),
+        ],
     )
     content = models.TextField(
         validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Content cannot be blank.")],
     )
     year = models.PositiveIntegerField()
-    image_url = models.URLField(max_length=500, blank=True)
+    image_url = models.ImageField(
+        upload_to="achievements/",
+        max_length=500,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_image_file_size,
+        ],
+    )
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -46,12 +75,24 @@ class News(models.Model):
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Title cannot be blank.")],
     )
     summary = models.TextField(
-        validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Summary cannot be blank.")],
+        validators=[
+            MinLengthValidator(1),
+            MaxLengthValidator(SUMMARY_MAX_LENGTH),
+            RegexValidator(r".*\S.*", "Summary cannot be blank."),
+        ],
     )
     content = models.TextField(
         validators=[MinLengthValidator(1), RegexValidator(r".*\S.*", "Content cannot be blank.")],
     )
-    cover_image_url = models.URLField(max_length=500, blank=True)
+    cover_image_url = models.ImageField(
+        upload_to="news/",
+        max_length=500,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_image_file_size,
+        ],
+    )
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

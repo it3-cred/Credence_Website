@@ -1,5 +1,15 @@
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator, MinLengthValidator, RegexValidator
 from django.db import models
+
+MAX_PRODUCT_IMAGE_FILE_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+
+
+def validate_product_image_file_size(value):
+    if not value:
+        return
+    if value.size > MAX_PRODUCT_IMAGE_FILE_SIZE_BYTES:
+        raise ValidationError("Product image file size must be 2 MB or less.")
 
 
 class ProductCategory(models.Model):
@@ -34,10 +44,19 @@ class Product(models.Model):
         unique=True,
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Name cannot be blank.")],
     )
-    slug = models.SlugField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, unique=True,)
     short_description = models.TextField(
         blank=True,
         validators=[RegexValidator(r".*\S.*", "Short description cannot be blank.")],
+    )
+    image = models.ImageField(
+        upload_to="products/",
+        max_length=500,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_product_image_file_size,
+        ],
     )
     is_visible = models.BooleanField(default=True)
 
