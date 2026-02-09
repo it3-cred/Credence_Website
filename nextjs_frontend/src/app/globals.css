@@ -1,26 +1,104 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand (RAL 2005 inspired) */
+  --brand-50: #fff3f1;
+  --brand-100: #ffe3de;
+  --brand-200: #ffc7bd;
+  --brand-300: #ffa394;
+  --brand-400: #ff6d58;
+  --brand-500: #ff2301;
+  --brand-600: #e61f01;
+  --brand-700: #bf1a01;
+  --brand-800: #991501;
+  --brand-900: #661000;
+
+  /* Industrial neutrals */
+  --steel-50: #f5f6f7;
+  --steel-100: #e8eaec;
+  --steel-200: #d1d6da;
+  --steel-300: #b0b8bf;
+  --steel-400: #8b96a0;
+  --steel-500: #68737f;
+  --steel-600: #4f5a66;
+  --steel-700: #3a434d;
+  --steel-800: #272e36;
+  --steel-900: #171c22;
+
+  /* Semantic tokens */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-subtle: var(--steel-50);
+  --color-text: var(--steel-900);
+  --color-text-muted: var(--steel-600);
+  --color-border: var(--steel-200);
+  --color-primary: var(--brand-500);
+  --color-primary-hover: var(--brand-600);
+  --color-primary-soft: var(--brand-100);
+  --color-footer-bg: var(--brand-500);
+  --color-footer-text: #ffffff;
+  --color-footer-muted: var(--brand-100);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  --color-steel-50: var(--steel-50);
+  --color-steel-100: var(--steel-100);
+  --color-steel-200: var(--steel-200);
+  --color-steel-300: var(--steel-300);
+  --color-steel-400: var(--steel-400);
+  --color-steel-500: var(--steel-500);
+  --color-steel-600: var(--steel-600);
+  --color-steel-700: var(--steel-700);
+  --color-steel-800: var(--steel-800);
+  --color-steel-900: var(--steel-900);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html,
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+.news-marquee-track {
+  animation: news-marquee 22s linear infinite;
+  will-change: transform;
+}
+
+.news-marquee:hover .news-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes news-marquee {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  .news-marquee-track {
+    animation: none;
+  }
 }
