@@ -102,3 +102,77 @@ body {
     animation: none;
   }
 }
+
+.product-summary-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-portfolio-card {
+  transition: transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
+}
+
+.product-portfolio-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--brand-300);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  border-width: 2px;
+}
+
+.industry-marquee-track {
+  animation: industry-marquee 24s linear infinite;
+  will-change: transform;
+}
+
+@keyframes industry-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.partners-track {
+  animation: partners-scroll 50s linear infinite;
+  will-change: transform;
+}
+
+.partners-track-reverse {
+  animation-name: partners-scroll-reverse;
+}
+
+@keyframes partners-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes partners-scroll-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.partner-name {
+  font-size: clamp(1.45rem, 3vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 0.015em;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.partner-card-name {
+  font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}

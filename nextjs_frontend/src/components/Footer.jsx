@@ -25,7 +25,7 @@ export default function Footer() {
       <div className="bg-linear-to-br from-brand-100 via-brand-200 to-white text-steel-900">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[1fr_1.7fr]">
-            <section className="border-b border-brand-200 pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
+            <section className="border-b border-[#ff2301]! pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
               <a href="/" className="inline-flex items-center">
                 <Image
                   src="/logo.jpg"
@@ -37,7 +37,7 @@ export default function Footer() {
                 />
               </a>
 
-              <p className="mt-6 max-w-sm text-sm leading-relaxed text-steel-700">
+              <p className="mt-6 max-w-sm text-sm leading-relaxed text-steel-900">
                 Connect with our expert team for products, services, and
                 technical guidance to improve performance and safety.
               </p>
@@ -52,7 +52,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="LinkedIn"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-brand-300 text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#ff2301]! text-brand-700 transition hover:bg-brand-500 hover:text-white"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -65,7 +65,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="WhatsApp"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-brand-300 text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#ff2301]! text-brand-700 transition hover:bg-brand-500 hover:text-white"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -78,7 +78,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="WhatsApp"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-brand-300 text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#ff2301]! text-brand-700 transition hover:bg-brand-500 hover:text-white"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +93,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="WhatsApp"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-brand-300 text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#ff2301]! text-brand-700 transition hover:bg-brand-500 hover:text-white"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -108,7 +108,7 @@ export default function Footer() {
                 <a
                   href="#"
                   aria-label="WhatsApp"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-brand-300 text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#ff2301]! text-brand-700 transition hover:bg-brand-500 hover:text-white"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -129,7 +129,7 @@ export default function Footer() {
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
                     Location
                   </p>
-                  <div className="overflow-hidden rounded-md border border-brand-300/80 bg-white shadow-sm">
+                  <div className="overflow-hidden rounded-md border border-[#ff2301]!/80 bg-white shadow-sm">
                     <iframe
                       title="Credence location map"
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3779.3857367349196!2d73.78886597524102!3d18.691540882435472!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2b7e5dba049c1%3A0x37607f5ae62d0128!2sCredence%20Automation%20and%20Control%20Systems%20Private%20Limited!5e0!3m2!1sen!2sin!4v1770626426124!5m2!1sen!2sin"
@@ -144,7 +144,7 @@ export default function Footer() {
                   <h3 className="text-2xl font-semibold tracking-tight">
                     Products
                   </h3>
-                  <ul className="mt-3 space-y-1.5 text-sm text-steel-700">
+                  <ul className="mt-3 space-y-1.5 text-sm text-steel-900">
                     {productLinks.map((item) => (
                       <li key={item}>
                         <a href="#" className="transition hover:text-brand-700">
@@ -156,13 +156,13 @@ export default function Footer() {
                 </div>
               </div>
 
-              <div className="border-t border-brand-200 pt-5">
+              <div className="border-t border-t-[#ff2301]! pt-5">
                 <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   {siteLinks.map((link) => (
                     <li key={link}>
                       <a
                         href="#"
-                        className="text-steel-700 transition hover:text-brand-700"
+                        className="text-steel-900 transition hover:text-brand-700"
                       >
                         {link}
                       </a>
@@ -175,13 +175,13 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="bg-steel-100">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 text-xs text-steel-700 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div className="bg-steel-400">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 text-xs text-black sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <p>
             Copyright (c) 2026 Credence Automation Control Systems Private
             Limited
           </p>
-          <p className="text-steel-600">
+          <p className="text-black">
             Engineered for industrial automation reliability
           </p>
         </div>
