@@ -3,75 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-const updates = [
-  {
-    id: 1,
-    model: "news",
-    title: "Industry",
-    summary: "Sales & Distribution Partnership with a",
-    content:
-      "Bray is a premier global manufacturer of quality valves, actuators and controls used for purifying water in critical process lines.",
-    is_visible: true,
-    created_at: "2026-01-12T10:00:00Z",
-    link_url: "#",
-  },
-  {
-    id: 2,
-    model: "achievement",
-    title: "Industry",
-    summary: "Sales & Distribution Partnership with a",
-    content:
-      "Successfully commissioned high-cycle actuated valve packages for a multi-site industrial utility network with strict safety requirements.",
-    is_visible: true,
-    created_at: "2026-01-26T10:00:00Z",
-    link_url: "#",
-  },
-  {
-    id: 3,
-    model: "news",
-    title: "Industry",
-    summary: "Sales & Distribution Partnership with a",
-    content:
-      "Expanded product support for process automation teams by adding faster response channels for installation, troubleshooting, and maintenance.",
-    is_visible: true,
-    created_at: "2026-02-03T10:00:00Z",
-    link_url: "#",
-  },
-  {
-    id: 4,
-    model: "achievement",
-    title: "Industry",
-    summary: "Automation Milestone in Safety",
-    content:
-      "Delivered an actuator retrofit package that improved response reliability and reduced unscheduled maintenance across the line.",
-    is_visible: true,
-    created_at: "2026-02-10T10:00:00Z",
-    link_url: "#",
-  },
-  {
-    id: 5,
-    model: "news",
-    title: "Industry",
-    summary: "Regional Service Network Expansion",
-    content:
-      "Extended field support coverage with faster callback windows for commissioning, diagnostics, and annual maintenance plans.",
-    is_visible: true,
-    created_at: "2026-02-14T10:00:00Z",
-    link_url: "#",
-  },
-  {
-    id: 6,
-    model: "achievement",
-    title: "Industry",
-    summary: "High-Cycle Validation Completed",
-    content:
-      "Validated actuator performance under high-cycle conditions for a demanding process segment with strict uptime targets.",
-    is_visible: true,
-    created_at: "2026-02-18T10:00:00Z",
-    link_url: "#",
-  },
-];
+import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
 const products = [
   {
@@ -222,13 +154,86 @@ function chunkItems(items, size) {
 }
 
 export default function LandingPage() {
-  const visibleUpdates = useMemo(() => updates.filter((item) => item.is_visible), []);
+  const [updates, setUpdates] = useState([]);
+  const [updatesLoading, setUpdatesLoading] = useState(true);
+  const [updatesError, setUpdatesError] = useState("");
+
+  const visibleUpdates = useMemo(() => updates.filter((item) => item.is_visible), [updates]);
   const visibleProducts = useMemo(() => products.filter((item) => item.is_visible), []);
 
   const [itemsPerSlide, setItemsPerSlide] = useState(3);
   const [slideIndex, setSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isIndustryPaused, setIsIndustryPaused] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchContentUpdates() {
+      setUpdatesLoading(true);
+      setUpdatesError("");
+
+      try {
+        const [newsRes, achievementsRes] = await Promise.all([
+          fetch(apiUrl(API_ENDPOINTS.contentNews), { signal: controller.signal }),
+          fetch(apiUrl(API_ENDPOINTS.contentAchievements), { signal: controller.signal }),
+        ]);
+
+        if (!newsRes.ok || !achievementsRes.ok) {
+          throw new Error("Failed to fetch content updates.");
+        }
+
+        const [newsJson, achievementsJson] = await Promise.all([newsRes.json(), achievementsRes.json()]);
+
+        const mappedNews = (newsJson.results || []).map((item) => ({
+          id: item.id,
+          model: "news",
+          category: "News",
+          title: item.title || "",
+          summary: item.summary || "",
+          is_visible: Boolean(item.is_visible),
+          created_at: item.created_at,
+          link_url: "#",
+        }));
+
+        const mappedAchievements = (achievementsJson.results || []).map((item) => ({
+          id: item.id,
+          model: "achievement",
+          category: "Achievement",
+          title: item.title || "",
+          summary: item.summary || "",
+          is_visible: Boolean(item.is_visible),
+          created_at: item.created_at,
+          link_url: "#",
+        }));
+
+        const merged = [...mappedNews, ...mappedAchievements].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+
+        if (isMounted) {
+          setUpdates(merged);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError" && isMounted) {
+          setUpdatesError("Unable to load news and achievements right now.");
+          setUpdates([]);
+        }
+      } finally {
+        if (isMounted) {
+          setUpdatesLoading(false);
+        }
+      }
+    }
+
+    fetchContentUpdates();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -288,7 +293,7 @@ export default function LandingPage() {
               </h1>
               <button
                 type="button"
-                className="mt-4 rounded-md border border-white/60 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-white hover:text-steel-900 sm:mt-6 sm:text-sm"
+                className="mt-4 rounded-md border border-white/60 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-white hover:text-steel-900 sm:mt-6 sm:text-sm cursor-pointer"
               >
                 Learn More
               </button>
@@ -300,6 +305,16 @@ export default function LandingPage() {
       <section>
         <div className="bg-[#e7d7b7]">
           <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
+            {updatesError ? (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{updatesError}</p>
+            ) : null}
+
+            {!updatesLoading && slides.length === 0 && !updatesError ? (
+              <p className="rounded-md bg-white/70 px-3 py-2 text-sm font-medium text-steel-800">
+                No visible news or achievements found.
+              </p>
+            ) : null}
+
             <div
               className="overflow-hidden"
               onMouseEnter={() => setIsPaused(true)}
@@ -319,18 +334,20 @@ export default function LandingPage() {
                     {slide.map((item) => (
                       <article
                         key={`${item.model}-${item.id}`}
-                        className="rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:p-4"
+                        className="news-card flex min-h-[210px] flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-[225px] sm:p-4"
                       >
-                        <p className="text-[11px] font-medium text-brand-700 sm:text-xs">{item.title}</p>
-                        <h2 className="mt-1.5 max-w-[26ch] text-[1.25rem] font-bold leading-[1.08] tracking-tight text-steel-900 sm:text-[1.5rem]">
-                          {item.summary}
+                        <p className="news-title-clamp text-[11px] font-medium text-brand-700 sm:text-xs">
+                          {item.category}
+                        </p>
+                        <h2 className="news-summary-clamp mt-1.5 text-[1.15rem] font-bold leading-[1.08] tracking-tight text-steel-900 sm:text-[1.3rem]">
+                          {item.title}
                         </h2>
-                        <p className="mt-2 max-w-[46ch] text-[11px] leading-snug text-steel-800 sm:text-xs">
-                          {item.content}
+                        <p className="news-content-clamp mt-2 text-[11px] leading-snug text-steel-800 sm:text-xs">
+                          {item.summary}
                         </p>
                         <a
                           href={item.link_url}
-                          className="mt-3 inline-block text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
+                          className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
                         >
                           Read More -{">"}
                         </a>
@@ -374,7 +391,7 @@ export default function LandingPage() {
                   </p>
                   <button
                     type="button"
-                    className="mt-4 rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                    className="mt-4 rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white cursor-pointer"
                   >
                     View Details
                   </button>
@@ -440,7 +457,7 @@ export default function LandingPage() {
           <h2 className="mt-1 text-4xl font-extrabold leading-[0.95] tracking-tight text-steel-900 sm:text-5xl">
             Our
             <br />
-            <span className="text-brand-500">Partners</span>
+            <span className="text-brand-500">Customers</span>
           </h2>
 
           <div className="mt-6 space-y-3 overflow-hidden">

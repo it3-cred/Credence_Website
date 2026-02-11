@@ -38,6 +38,13 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://192.168.1.48:3000",
+]
+
+# Allow frontend dev servers on local LAN (e.g., 192.168.1.x:3000)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://192\.168\.1\.\d{1,3}:3000$",
 ]
 # Only needed if you use SessionAuth from Next.js with cookies:
 CORS_ALLOW_CREDENTIALS = True
