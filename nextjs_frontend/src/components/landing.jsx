@@ -282,7 +282,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-linear-to-r from-steel-900/70 via-steel-900/35 to-steel-900/10" />
           <div className="relative mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
             <div className="w-[90vw] max-w-[430px] rounded-xl border border-white/40 bg-steel-900/50 p-4 backdrop-blur-[4px] sm:rounded-2xl sm:p-6">
-              <h1 className="max-w-[10ch] break-words text-[clamp(2rem,7vw,4.4rem)] font-extrabold leading-[0.92] tracking-tight text-white">
+              <h1 className="max-w-[10ch] break-words text-[clamp(4rem,4vw,4.2rem)] font-extrabold leading-[0.92] tracking-tight text-white">
                 <span className="text-brand-500">Reliability</span>
                 <br />
                 engineered
@@ -346,7 +346,7 @@ export default function LandingPage() {
                           {item.summary}
                         </p>
                         <a
-                          href={item.link_url}
+                          href={`/content?type=${encodeURIComponent(item.model)}&id=${encodeURIComponent(item.id)}`}
                           className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
                         >
                           Read More -{">"}
@@ -473,7 +473,7 @@ export default function LandingPage() {
                     {[...row, ...row].map((company, index) => (
                       <span
                         key={`${rowIndex}-${company}-${index}`}
-                        className="partner-name text-steel-800"
+                        className="customer-company-name text-steel-800"
                       >
                         {company}
                       </span>

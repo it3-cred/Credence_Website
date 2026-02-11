@@ -33,13 +33,13 @@ export default function Navbar() {
         </a>
 
         <ul
-          className={`hidden items-center transition-all duration-300 lg:flex ${isDesktopSearchOpen ? "gap-4" : "gap-6"}`}
+          className={`hidden items-center transition-all duration-300 min-[1200px]:flex ${isDesktopSearchOpen ? "gap-4" : "gap-6"}`}
         >
           {navItems.map((item) => (
             <li key={item.label}>
               <a
                 href={item.href}
-                className="text-base font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
+                className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
               >
                 {item.label}
               </a>
@@ -47,7 +47,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden items-center gap-3 min-[1200px]:flex">
           <div className="flex items-center">
             <button
               type="button"
@@ -81,19 +81,19 @@ export default function Navbar() {
           </div>
           <button
             type="button"
-            className="rounded-md cursor-pointer border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+            className="rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
           >
-            Login / Register
+            Login
           </button>
           <button
             type="button"
-            className="rounded-md border-2 border-transparent cursor-pointer bg-[#FF2300] px-4 py-2 text-sm font-semibold text-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[0.98] hover:border-[#FF2300] hover:bg-white hover:text-[#FF2300]"
+            className="rounded-md border-2 border-transparent cursor-pointer bg-[#FF2300] px-3 py-2 text-sm font-semibold text-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[0.98] hover:border-[#FF2300] hover:bg-white hover:text-[#FF2300]"
           >
             Request Quote
           </button>
         </div>
 
-        <div className="flex items-center gap-1 lg:hidden">
+        <div className="flex items-center gap-1 min-[1200px]:hidden">
           <button
             type="button"
             className="inline-flex items-center rounded-md p-2 text-zinc-800"
@@ -146,7 +146,7 @@ export default function Navbar() {
       </nav>
 
       {isSearchOpen && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-3 lg:hidden sm:px-6">
+        <div className="border-t border-zinc-200 bg-white px-4 py-3 min-[1200px]:hidden sm:px-6">
           <div className="flex h-10 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3">
             <svg
               className="h-4 w-4 text-zinc-600"
@@ -168,7 +168,7 @@ export default function Navbar() {
       )}
 
       {isOpen && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-4 lg:hidden sm:px-6">
+        <div className="border-t border-zinc-200 bg-white px-4 py-4 min-[1200px]:hidden sm:px-6">
           <ul className="flex flex-col gap-3">
             {navItems.map((item) => (
               <li key={item.label}>

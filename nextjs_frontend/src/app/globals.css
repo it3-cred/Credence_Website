@@ -68,6 +68,7 @@ html,
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+  font-family: var(--font-montserrat), "Montserrat", "Segoe UI", sans-serif;
 }
 
 * {
@@ -166,6 +167,15 @@ body {
   font-size: clamp(1.45rem, 3vw, 3rem);
   font-weight: 900;
   letter-spacing: 0.015em;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.customer-company-name {
+  font-family: var(--font-bebas), "Bebas Neue", sans-serif;
+  font-size: clamp(1.6rem, 2.2vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
   line-height: 0.95;
   white-space: nowrap;
 }
