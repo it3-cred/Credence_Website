@@ -16,6 +16,19 @@ function withMediaBase(url) {
   return `${API_BASE_URL}/${url}`;
 }
 
+function normalizeImageList(raw, selectedType) {
+  const fromArray = Array.isArray(raw?.image_urls) ? raw.image_urls.map(withMediaBase).filter(Boolean) : [];
+
+  if (fromArray.length > 0) {
+    return fromArray;
+  }
+
+  const fallbackSingle =
+    selectedType === "achievement" ? withMediaBase(raw?.image_url) : withMediaBase(raw?.cover_image_url);
+
+  return fallbackSingle ? [fallbackSingle] : [];
+}
+
 async function fetchItemById(endpointPath, targetId, signal) {
   const expectedId = String(targetId);
   let nextUrl = apiUrl(endpointPath);
@@ -67,6 +80,8 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
   const [moreItems, setMoreItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [pauseAutoplay, setPauseAutoplay] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -95,27 +110,18 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
           return;
         }
 
-        const mapped =
-          selectedType === "achievement"
-            ? {
-                id: raw.id,
-                title: raw.title || "",
-                summary: raw.summary || "",
-                content: raw.content || "",
-                year: raw.year,
-                created_at: raw.created_at,
-                image_url: withMediaBase(raw.image_url),
-              }
-            : {
-                id: raw.id,
-                title: raw.title || "",
-                summary: raw.summary || "",
-                content: raw.content || "",
-                created_at: raw.created_at,
-                image_url: withMediaBase(raw.cover_image_url),
-              };
+        const mapped = {
+          id: raw.id,
+          title: raw.title || "",
+          summary: raw.summary || "",
+          content: raw.content || "",
+          year: raw.year,
+          created_at: raw.created_at,
+          image_urls: normalizeImageList(raw, selectedType),
+        };
 
         setItem(mapped);
+        setCurrentImageIndex(0);
 
         const mappedMore = allItems
           .filter((record) => Boolean(record.is_visible) && String(record.id) !== String(id))
@@ -145,6 +151,27 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
       controller.abort();
     };
   }, [id, selectedType]);
+
+  useEffect(() => {
+    const imagesCount = item?.image_urls?.length || 0;
+    if (imagesCount <= 1 || pauseAutoplay) return undefined;
+
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % imagesCount);
+    }, 2500);
+
+    return () => clearInterval(timer);
+  }, [item, pauseAutoplay]);
+
+  const canSlideImages = (item?.image_urls?.length || 0) > 1;
+  const goToPreviousImage = () => {
+    if (!item?.image_urls?.length) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? item.image_urls.length - 1 : prev - 1));
+  };
+  const goToNextImage = () => {
+    if (!item?.image_urls?.length) return;
+    setCurrentImageIndex((prev) => (prev + 1) % item.image_urls.length);
+  };
 
   return (
     <>
@@ -192,13 +219,66 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
               </div>
 
               <div className="mt-6 overflow-hidden rounded-2xl border border-brand-200 bg-white">
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="h-64 w-full object-cover sm:h-80"
-                    loading="lazy"
-                  />
+                {item.image_urls.length > 0 ? (
+                  <div
+                    className="relative p-2"
+                    onMouseEnter={() => setPauseAutoplay(true)}
+                    onMouseLeave={() => setPauseAutoplay(false)}
+                    onTouchStart={() => setPauseAutoplay(true)}
+                    onTouchEnd={() => setPauseAutoplay(false)}
+                  >
+                    <div className="overflow-hidden rounded-lg">
+                      <div
+                        className="flex transition-transform duration-500 ease-out"
+                        style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                      >
+                        {item.image_urls.map((imageUrl, index) => (
+                          <img
+                            key={`${item.id}-image-${index}`}
+                            src={imageUrl}
+                            alt={`${item.title} image ${index + 1}`}
+                            className="h-64 w-full shrink-0 object-cover sm:h-80"
+                            loading="lazy"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {canSlideImages ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={goToPreviousImage}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-white/70 bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/55"
+                          aria-label="Previous image"
+                        >
+                          Prev
+                        </button>
+                        <button
+                          type="button"
+                          onClick={goToNextImage}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full border border-white/70 bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/55"
+                          aria-label="Next image"
+                        >
+                          Next
+                        </button>
+
+                        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/35 px-3 py-1.5 backdrop-blur-sm">
+                          {item.image_urls.map((_, dotIndex) => (
+                            <button
+                              key={`dot-${dotIndex}`}
+                              type="button"
+                              onClick={() => setCurrentImageIndex(dotIndex)}
+                              className={`h-2.5 w-2.5 rounded-full transition ${
+                                currentImageIndex === dotIndex ? "bg-white" : "bg-white/45 hover:bg-white/70"
+                              }`}
+                              aria-label={`Go to image ${dotIndex + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
                 ) : null}
                 <div className="p-6">
                   <p className="whitespace-pre-line leading-relaxed text-steel-800">{item.content}</p>

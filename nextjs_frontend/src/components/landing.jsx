@@ -384,9 +384,13 @@ export default function LandingPage() {
                   />
                 </div>
                 <div className="p-5">
-                  <h3 className="text-lg font-bold leading-tight text-steel-900">{product.name}</h3>
-                  <p className="mt-2 text-sm font-semibold text-brand-700">{product.short_description}</p>
-                  <p className="product-summary-clamp mt-2 text-sm leading-snug text-steel-700">
+                  <h3 className="overflow-hidden text-ellipsis text-lg font-bold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                    {product.name}
+                  </h3>
+                  <p className="mt-2 overflow-hidden text-ellipsis text-sm font-semibold text-brand-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                    {product.short_description}
+                  </p>
+                  <p className="mt-2 overflow-hidden text-ellipsis text-sm leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
                     {product.summary}
                   </p>
                   <button

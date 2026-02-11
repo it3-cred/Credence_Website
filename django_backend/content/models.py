@@ -99,3 +99,39 @@ class News(models.Model):
 
     class Meta:
         db_table = "news"
+
+
+class NewsImage(models.Model):
+    news = models.ForeignKey(News, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(
+        upload_to="news/",
+        max_length=500,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_image_file_size,
+        ],
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "news_images"
+        ordering = ("display_order", "id")
+
+
+class AchievementImage(models.Model):
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(
+        upload_to="achievements/",
+        max_length=500,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_image_file_size,
+        ],
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "achievement_images"
+        ordering = ("display_order", "id")
