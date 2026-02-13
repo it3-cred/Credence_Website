@@ -1,26 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const navItems = [
   { label: "Products", href: "#" },
   { label: "Solutions", href: "#" },
   { label: "Resources", href: "#" },
-  { label: "News", href: "#" },
-  { label: "Distributors", href: "#" },
-  { label: "Careers", href: "#" },
+  { label: "News", href: "/news" },
+  { label: "Distributors", href: "/distributors" },
+  { label: "Careers", href: "/careers" },
 ];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const getApiBase = () => {
+    if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
+    return "http://127.0.0.1:8000";
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMe = async () => {
+      try {
+        const response = await fetch(`${getApiBase()}/api/auth/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+        const payload = await response.json();
+        if (!isMounted) return;
+        setIsAuthenticated(Boolean(payload?.data?.authenticated));
+      } catch (error) {
+        if (isMounted) {
+          setIsAuthenticated(false);
+        }
+      }
+    };
+
+    loadMe();
+    window.addEventListener("auth-changed", loadMe);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("auth-changed", loadMe);
+    };
+  }, []);
+
+  useEffect(() => {
+    const closeUserMenu = () => setIsUserMenuOpen(false);
+    window.addEventListener("click", closeUserMenu);
+    return () => window.removeEventListener("click", closeUserMenu);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${getApiBase()}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      // Ignore network errors and still reset local auth state.
+    }
+    setIsAuthenticated(false);
+    setIsUserMenuOpen(false);
+    window.dispatchEvent(new Event("auth-changed"));
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <a href="/" className="flex items-center">
+        <Link href="/" className="flex items-center">
           <Image
             src="/logo.jpg"
             alt="Credence logo"
@@ -30,19 +87,28 @@ export default function Navbar() {
             style={{ width: "auto" }}
             className="h-9 w-auto sm:h-10"
           />
-        </a>
+        </Link>
 
         <ul
           className={`hidden items-center transition-all duration-300 min-[1200px]:flex ${isDesktopSearchOpen ? "gap-4" : "gap-6"}`}
         >
           {navItems.map((item) => (
             <li key={item.label}>
-              <a
-                href={item.href}
-                className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
-              >
-                {item.label}
-              </a>
+              {item.href.startsWith("/") ? (
+                <Link
+                  href={item.href}
+                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <a
+                  href={item.href}
+                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
+                >
+                  {item.label}
+                </a>
+              )}
             </li>
           ))}
         </ul>
@@ -79,12 +145,52 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            className="rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
-          >
-            Login
-          </button>
+          {isAuthenticated ? (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsUserMenuOpen((prev) => !prev);
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-700 transition hover:bg-zinc-50"
+                aria-label="Open user menu"
+                title="User menu"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20a8 8 0 0 1 16 0" />
+                </svg>
+              </button>
+              {isUserMenuOpen ? (
+                <div
+                  className="absolute right-0 top-12 z-50 w-44 rounded-md border border-zinc-200 bg-white p-1 shadow-lg"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Link
+                    href="/auth"
+                    className="block rounded px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="block w-full rounded px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <Link
+              href="/auth"
+              className="rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+            >
+              Login
+            </Link>
+          )}
           <button
             type="button"
             className="rounded-md border-2 border-transparent cursor-pointer bg-[#FF2300] px-3 py-2 text-sm font-semibold text-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[0.98] hover:border-[#FF2300] hover:bg-white hover:text-[#FF2300]"
@@ -172,22 +278,49 @@ export default function Navbar() {
           <ul className="flex flex-col gap-3">
             {navItems.map((item) => (
               <li key={item.label}>
-                <a
-                  href={item.href}
-                  className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
-                >
-                  {item.label}
-                </a>
+                {item.href.startsWith("/") ? (
+                  <Link
+                    href={item.href}
+                    className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={item.href}
+                    className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
+                  >
+                    {item.label}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
-            >
-              Login / Register
-            </button>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center justify-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+                >
+                  My Account
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/auth"
+                className="rounded-md border border-zinc-300 px-4 py-2 text-center text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+              >
+                Login / Register
+              </Link>
+            )}
             <button
               type="button"
               className="rounded-md bg-[#FF2300] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e21f00]"

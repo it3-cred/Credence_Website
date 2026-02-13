@@ -183,3 +183,17 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 12,
 }
+
+# OTP / email delivery
+_raw_email_otp_expiry = env("EMAIL_OTP_EXPIRY_MINUTES", default="10")
+try:
+    EMAIL_OTP_EXPIRY_MINUTES = int(str(_raw_email_otp_expiry).strip().split()[0])
+except (ValueError, TypeError, IndexError):
+    EMAIL_OTP_EXPIRY_MINUTES = 10
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@credence.local")
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")

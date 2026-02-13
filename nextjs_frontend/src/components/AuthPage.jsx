@@ -1,0 +1,590 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+function getApiBase() {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
+  return "http://127.0.0.1:8000";
+}
+
+function randomBetween(min, max, decimals = 1) {
+  return (Math.random() * (max - min) + min).toFixed(decimals);
+}
+
+function getPasswordScore(value) {
+  let score = 0;
+  if (value.length >= 8) score += 1;
+  if (/[A-Z]/.test(value)) score += 1;
+  if (/[0-9]/.test(value)) score += 1;
+  if (/[^A-Za-z0-9]/.test(value)) score += 1;
+  return score;
+}
+
+function parseBackendError(payload, fallbackMessage) {
+  if (!payload || !payload.error) return fallbackMessage;
+  const fieldErrors = payload.error.errors || {};
+  const firstField = Object.keys(fieldErrors)[0];
+  if (firstField && Array.isArray(fieldErrors[firstField]) && fieldErrors[firstField][0]) {
+    return fieldErrors[firstField][0];
+  }
+  return payload.error.message || fallbackMessage;
+}
+
+async function apiPost(path, body) {
+  const response = await fetch(`${getApiBase()}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+
+  if (!response.ok || (payload && payload.ok === false)) {
+    const message = parseBackendError(payload, "Request failed. Please try again.");
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
+export default function AuthPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("login");
+  const [loginMethod, setLoginMethod] = useState("password");
+  const [signupMethod, setSignupMethod] = useState("password");
+
+  const [telemetry, setTelemetry] = useState({
+    pressure: "0.0",
+    stroke: "0",
+    temperature: "0",
+  });
+
+  const [loginForm, setLoginForm] = useState({
+    email: "",
+    password: "",
+    otp: "",
+  });
+
+  const [signupForm, setSignupForm] = useState({
+    name: "",
+    email: "",
+    company_name: "",
+    password: "",
+    confirmPassword: "",
+    otp: "",
+  });
+
+  const [loginAlert, setLoginAlert] = useState({ type: "", message: "" });
+  const [signupAlert, setSignupAlert] = useState({ type: "", message: "" });
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [isSignupLoading, setIsSignupLoading] = useState(false);
+  const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
+  const [isSendingSignupOtp, setIsSendingSignupOtp] = useState(false);
+
+  useEffect(() => {
+    const tick = () => {
+      setTelemetry({
+        pressure: randomBetween(4.1, 8.8, 1),
+        stroke: randomBetween(35, 85, 0),
+        temperature: randomBetween(41, 69, 0),
+      });
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 2400);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const passwordScore = useMemo(() => getPasswordScore(signupForm.password), [signupForm.password]);
+  const strengthClass = useMemo(() => {
+    if (passwordScore <= 2) return "bg-orange-500";
+    if (passwordScore === 3) return "bg-yellow-500";
+    return "bg-emerald-600";
+  }, [passwordScore]);
+
+  const tabButtonClass = (tab) =>
+    `relative pb-3 text-sm font-medium transition ${
+      activeTab === tab ? "text-steel-900" : "text-steel-400 hover:text-steel-600"
+    }`;
+
+  const methodButtonClass = (isActive) =>
+    `rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.06em] transition ${
+      isActive ? "border-brand-500 bg-brand-50 text-brand-700" : "border-steel-200 text-steel-600 hover:bg-steel-50"
+    }`;
+
+  const segmentClass = (index) => `h-1 flex-1 rounded-sm ${passwordScore > index ? strengthClass : "bg-steel-200"}`;
+
+  const alertClass = (type) =>
+    type === "success"
+      ? "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+      : "mb-4 rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-700";
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+    setLoginAlert({ type: "", message: "" });
+
+    if (!loginForm.email) {
+      setLoginAlert({ type: "error", message: "Email is required." });
+      return;
+    }
+    if (loginMethod === "password" && !loginForm.password) {
+      setLoginAlert({ type: "error", message: "Password is required." });
+      return;
+    }
+    if (loginMethod === "otp" && !loginForm.otp) {
+      setLoginAlert({ type: "error", message: "OTP is required." });
+      return;
+    }
+
+    setIsLoginLoading(true);
+    try {
+      const payload =
+        loginMethod === "password"
+          ? { email: loginForm.email, password: loginForm.password }
+          : { email: loginForm.email, otp: loginForm.otp };
+
+      await apiPost("/api/auth/login", payload);
+      setLoginAlert({ type: "success", message: "Signed in successfully." });
+      window.dispatchEvent(new Event("auth-changed"));
+      window.setTimeout(() => router.push("/"), 500);
+    } catch (error) {
+      setLoginAlert({ type: "error", message: error.message });
+    } finally {
+      setIsLoginLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (event) => {
+    event.preventDefault();
+    setSignupAlert({ type: "", message: "" });
+
+    if (!signupForm.name || !signupForm.email || !signupForm.company_name) {
+      setSignupAlert({ type: "error", message: "Name, email, and company name are required." });
+      return;
+    }
+
+    if (signupMethod === "password") {
+      if (!signupForm.password) {
+        setSignupAlert({ type: "error", message: "Password is required." });
+        return;
+      }
+      if (signupForm.password.length < 8) {
+        setSignupAlert({ type: "error", message: "Password must be at least 8 characters." });
+        return;
+      }
+      if (signupForm.password !== signupForm.confirmPassword) {
+        setSignupAlert({ type: "error", message: "Passwords do not match." });
+        return;
+      }
+    } else if (!signupForm.otp) {
+      setSignupAlert({ type: "error", message: "OTP is required." });
+      return;
+    }
+
+    setIsSignupLoading(true);
+    try {
+      const payload =
+        signupMethod === "password"
+          ? {
+              name: signupForm.name,
+              email: signupForm.email,
+              company_name: signupForm.company_name,
+              password: signupForm.password,
+            }
+          : {
+              name: signupForm.name,
+              email: signupForm.email,
+              company_name: signupForm.company_name,
+              otp: signupForm.otp,
+            };
+
+      await apiPost("/api/auth/signup", payload);
+      setSignupAlert({ type: "success", message: "Account created successfully." });
+      window.dispatchEvent(new Event("auth-changed"));
+      window.setTimeout(() => router.push("/"), 500);
+    } catch (error) {
+      setSignupAlert({ type: "error", message: error.message });
+    } finally {
+      setIsSignupLoading(false);
+    }
+  };
+
+  const handleSendOtp = async (purpose) => {
+    if (purpose === "LOGIN") {
+      setLoginAlert({ type: "", message: "" });
+      if (!loginForm.email) {
+        setLoginAlert({ type: "error", message: "Enter email before requesting OTP." });
+        return;
+      }
+      setIsSendingLoginOtp(true);
+      try {
+        const result = await apiPost("/api/auth/otp/send", { email: loginForm.email, purpose: "LOGIN" });
+        const debugOtp = result?.data?.otp_debug ? ` (OTP: ${result.data.otp_debug})` : "";
+        setLoginAlert({ type: "success", message: `OTP sent to your email.${debugOtp}` });
+      } catch (error) {
+        setLoginAlert({ type: "error", message: error.message });
+      } finally {
+        setIsSendingLoginOtp(false);
+      }
+      return;
+    }
+
+    setSignupAlert({ type: "", message: "" });
+    if (!signupForm.email) {
+      setSignupAlert({ type: "error", message: "Enter email before requesting OTP." });
+      return;
+    }
+    setIsSendingSignupOtp(true);
+    try {
+      const result = await apiPost("/api/auth/otp/send", { email: signupForm.email, purpose: "SIGNUP" });
+      const debugOtp = result?.data?.otp_debug ? ` (OTP: ${result.data.otp_debug})` : "";
+      setSignupAlert({ type: "success", message: `OTP sent to your email.${debugOtp}` });
+    } catch (error) {
+      setSignupAlert({ type: "error", message: error.message });
+    } finally {
+      setIsSendingSignupOtp(false);
+    }
+  };
+
+  return (
+    <>
+      <Navbar />
+      <main className="bg-steel-50">
+        <section className="mx-auto grid min-h-[calc(100vh-74px)] max-w-[1500px] grid-cols-1 xl:grid-cols-2">
+          <div className="relative hidden overflow-hidden bg-linear-to-br from-steel-900 via-steel-800 to-brand-900 px-12 py-10 xl:flex xl:flex-col xl:justify-between">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-30"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }}
+            />
+
+            <div className="relative z-10">
+              <p className="font-serif text-3xl text-white">Credence</p>
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
+                Automation and Control Systems Pvt Ltd
+              </p>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center justify-center">
+              <div className="h-[170px] w-[240px]">
+                <svg viewBox="0 0 220 160" width="220" height="160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="18" y="44" width="14" height="72" rx="2" fill="#2a2926" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                  <circle cx="25" cy="57" r="4" fill="#1a1916" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                  <circle cx="25" cy="103" r="4" fill="#1a1916" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                  <rect x="30" y="52" width="80" height="56" rx="3" fill="#232220" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+                  <rect x="36" y="60" width="12" height="40" rx="2" fill="#181716" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <rect x="52" y="60" width="12" height="40" rx="2" fill="#181716" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <rect x="68" y="60" width="12" height="40" rx="2" fill="#181716" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                  <rect x="108" y="58" width="10" height="44" rx="2" fill="#2e2c29" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+
+                  <g>
+                    <rect x="116" y="73" width="60" height="14" rx="2" fill="#3a3835" stroke="rgba(255,255,255,0.14)" strokeWidth="1">
+                      <animateTransform
+                        attributeName="transform"
+                        type="translate"
+                        values="0 0;18 0;18 0;0 0"
+                        keyTimes="0;0.45;0.55;1"
+                        dur="2.6s"
+                        repeatCount="indefinite"
+                      />
+                    </rect>
+                    <circle cx="180" cy="80" r="9" fill="#2a2926" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5">
+                      <animateTransform
+                        attributeName="transform"
+                        type="translate"
+                        values="0 0;18 0;18 0;0 0"
+                        keyTimes="0;0.45;0.55;1"
+                        dur="2.6s"
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                  </g>
+
+                  <circle cx="110" cy="80" r="30" stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="5 4">
+                    <animateTransform attributeName="transform" type="rotate" from="0 110 80" to="360 110 80" dur="7s" repeatCount="indefinite" />
+                  </circle>
+
+                  <circle cx="110" cy="80" r="18" stroke="rgba(255,255,255,0.07)" strokeWidth="1" fill="none">
+                    <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2.6s" repeatCount="indefinite" />
+                  </circle>
+
+                  <circle cx="80" cy="48" r="3.5" fill="#4ade80">
+                    <animate attributeName="opacity" values="1;0.15;1" dur="1.9s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="90" cy="48" r="3.5" fill="#f97316" opacity="0.65" />
+                  <circle cx="100" cy="48" r="3.5" fill="rgba(255,255,255,0.12)" />
+
+                  <rect x="30" y="112" width="80" height="2" rx="1" fill="rgba(255,255,255,0.06)" />
+                  <rect x="30" y="112" height="2" rx="1" fill="rgba(255,255,255,0.32)">
+                    <animate attributeName="width" values="28;60;54;28" dur="4.2s" repeatCount="indefinite" />
+                  </rect>
+                </svg>
+              </div>
+            </div>
+
+            <div className="relative z-10 grid grid-cols-3 border-t border-white/10 pt-6">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">Pressure</p>
+                <p className="mt-1 font-mono text-lg text-white/85">{telemetry.pressure} bar</p>
+              </div>
+              <div className="border-l border-white/10 pl-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">Stroke</p>
+                <p className="mt-1 font-mono text-lg text-white/85">{telemetry.stroke} %</p>
+              </div>
+              <div className="border-l border-white/10 pl-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">Temp</p>
+                <p className="mt-1 font-mono text-lg text-white/85">{telemetry.temperature} C</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative bg-white px-6 py-10 sm:px-10 lg:px-14">
+            <div className="mx-auto mt-2 w-full max-w-[540px]">
+              <div className="mb-8 flex border-b border-steel-200">
+                <button
+                  type="button"
+                  className={tabButtonClass("login")}
+                  onClick={() => {
+                    setActiveTab("login");
+                    setLoginAlert({ type: "", message: "" });
+                    setSignupAlert({ type: "", message: "" });
+                  }}
+                >
+                  Sign in
+                  <span
+                    className={`absolute bottom-[-1px] left-0 h-[2px] w-full bg-brand-500 transition ${
+                      activeTab === "login" ? "scale-x-100" : "scale-x-0"
+                    } origin-left`}
+                  />
+                </button>
+                <button
+                  type="button"
+                  className={`${tabButtonClass("signup")} ml-8`}
+                  onClick={() => {
+                    setActiveTab("signup");
+                    setLoginAlert({ type: "", message: "" });
+                    setSignupAlert({ type: "", message: "" });
+                  }}
+                >
+                  Create account
+                  <span
+                    className={`absolute bottom-[-1px] left-0 h-[2px] w-full bg-brand-500 transition ${
+                      activeTab === "signup" ? "scale-x-100" : "scale-x-0"
+                    } origin-left`}
+                  />
+                </button>
+              </div>
+
+              {activeTab === "login" ? (
+                <form onSubmit={handleLoginSubmit}>
+                  <div className="mb-6">
+                    <h1 className="font-serif text-5xl leading-none text-steel-900">Welcome back.</h1>
+                    <p className="mt-3 text-sm text-steel-600">Login with password or OTP.</p>
+                  </div>
+
+                  {loginAlert.message ? <div className={alertClass(loginAlert.type)}>{loginAlert.message}</div> : null}
+
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Email</label>
+                    <input
+                      type="email"
+                      className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                      placeholder="you@company.com"
+                      value={loginForm.email}
+                      onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
+                    />
+                  </div>
+
+                  <div className="mb-4 flex gap-2">
+                    <button type="button" className={methodButtonClass(loginMethod === "password")} onClick={() => setLoginMethod("password")}>
+                      Password
+                    </button>
+                    <button type="button" className={methodButtonClass(loginMethod === "otp")} onClick={() => setLoginMethod("otp")}>
+                      OTP
+                    </button>
+                  </div>
+
+                  {loginMethod === "password" ? (
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                        placeholder="********"
+                        value={loginForm.password}
+                        onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">OTP</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                          placeholder="6-digit OTP"
+                          value={loginForm.otp}
+                          onChange={(event) => setLoginForm((prev) => ({ ...prev, otp: event.target.value }))}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSendOtp("LOGIN")}
+                          disabled={isSendingLoginOtp}
+                          className={`rounded-sm px-4 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-white transition ${
+                            isSendingLoginOtp ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                          }`}
+                        >
+                          {isSendingLoginOtp ? "Sending..." : "Send OTP"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoginLoading}
+                    className={`w-full rounded-sm px-4 py-3 text-sm font-semibold text-white transition ${
+                      isLoginLoading ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                    }`}
+                  >
+                    {isLoginLoading ? "Signing in..." : "Sign in"}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleSignupSubmit}>
+                  <div className="mb-6">
+                    <h1 className="font-serif text-5xl leading-none text-steel-900">Create an account.</h1>
+                    <p className="mt-3 text-sm text-steel-600">
+                      Required fields: name, email, company name. Then signup via password or OTP.
+                    </p>
+                  </div>
+
+                  {signupAlert.message ? <div className={alertClass(signupAlert.type)}>{signupAlert.message}</div> : null}
+
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Full name</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                      placeholder="John Doe"
+                      value={signupForm.name}
+                      onChange={(event) => setSignupForm((prev) => ({ ...prev, name: event.target.value }))}
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Email</label>
+                    <input
+                      type="email"
+                      className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                      placeholder="you@company.com"
+                      value={signupForm.email}
+                      onChange={(event) => setSignupForm((prev) => ({ ...prev, email: event.target.value }))}
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Company name</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                      placeholder="Your company"
+                      value={signupForm.company_name}
+                      onChange={(event) => setSignupForm((prev) => ({ ...prev, company_name: event.target.value }))}
+                    />
+                  </div>
+
+                  <div className="mb-4 flex gap-2">
+                    <button type="button" className={methodButtonClass(signupMethod === "password")} onClick={() => setSignupMethod("password")}>
+                      Password
+                    </button>
+                    <button type="button" className={methodButtonClass(signupMethod === "otp")} onClick={() => setSignupMethod("otp")}>
+                      OTP
+                    </button>
+                  </div>
+
+                  {signupMethod === "password" ? (
+                    <>
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Password</label>
+                        <input
+                          type="password"
+                          className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                          placeholder="Min. 8 characters"
+                          value={signupForm.password}
+                          onChange={(event) => setSignupForm((prev) => ({ ...prev, password: event.target.value }))}
+                        />
+                        <div className="mt-2 flex gap-1">
+                          {[0, 1, 2, 3].map((index) => (
+                            <span key={index} className={segmentClass(index)} />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Confirm password</label>
+                        <input
+                          type="password"
+                          className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                          placeholder="Repeat password"
+                          value={signupForm.confirmPassword}
+                          onChange={(event) => setSignupForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">OTP</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                          placeholder="6-digit OTP"
+                          value={signupForm.otp}
+                          onChange={(event) => setSignupForm((prev) => ({ ...prev, otp: event.target.value }))}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSendOtp("SIGNUP")}
+                          disabled={isSendingSignupOtp}
+                          className={`rounded-sm px-4 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-white transition ${
+                            isSendingSignupOtp ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                          }`}
+                        >
+                          {isSendingSignupOtp ? "Sending..." : "Send OTP"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSignupLoading}
+                    className={`w-full rounded-sm px-4 py-3 text-sm font-semibold text-white transition ${
+                      isSignupLoading ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                    }`}
+                  >
+                    {isSignupLoading ? "Creating account..." : "Create account"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}

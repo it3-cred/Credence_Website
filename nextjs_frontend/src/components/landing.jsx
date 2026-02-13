@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
+import Link from "next/link";
 
 const products = [
   {
@@ -273,7 +274,7 @@ export default function LandingPage() {
       <main className="bg-steel-50">
       <section className="w-full">
         <div
-          className="relative min-h-[220px] w-full bg-cover bg-center sm:min-h-[300px] md:min-h-[360px] lg:min-h-[440px]"
+          className="relative min-h-[220px] w-full bg-cover bg-center sm:min-h-[300px] md:min-h-[360px] lg:min-h-[350px]"
           style={{
             backgroundImage:
               "url('https://www.karenaudit.com/wp-content/uploads/2024/03/steel-metal-celik-isci.jpg')",
@@ -282,7 +283,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-linear-to-r from-steel-900/70 via-steel-900/35 to-steel-900/10" />
           <div className="relative mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
             <div className="w-[90vw] max-w-[430px] rounded-xl border border-white/40 bg-steel-900/50 p-4 backdrop-blur-[4px] sm:rounded-2xl sm:p-6">
-              <h1 className="max-w-[10ch] break-words text-[clamp(4rem,4vw,4.2rem)] font-extrabold leading-[0.92] tracking-tight text-white">
+              <h1 className="max-w-[10ch] break-words text-[clamp(2.8rem,3.4vw,3.4rem)] font-extrabold leading-[0.92] tracking-tight text-white">
                 <span className="text-brand-500">Reliability</span>
                 <br />
                 engineered
@@ -291,12 +292,12 @@ export default function LandingPage() {
                 <br />
                 valve
               </h1>
-              <button
-                type="button"
-                className="mt-4 rounded-md border border-white/60 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-white hover:text-steel-900 sm:mt-6 sm:text-sm cursor-pointer"
+              <Link
+                href="/auth"
+                className="mt-4 inline-block rounded-md border border-white/60 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-white hover:text-steel-900 sm:mt-6 sm:text-sm"
               >
-                Learn More
-              </button>
+                Know More Abot Us
+              </Link>
             </div>
           </div>
         </div>
@@ -305,6 +306,18 @@ export default function LandingPage() {
       <section>
         <div className="bg-[#e7d7b7]">
           <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
+                Latest News & Achievements
+              </p>
+              <Link
+                href="/news"
+                className="rounded-md  px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-700 hover:text-white"
+              >
+                View All News
+              </Link>
+            </div>
+
             {updatesError ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{updatesError}</p>
             ) : null}
@@ -345,12 +358,12 @@ export default function LandingPage() {
                         <p className="news-content-clamp mt-2 text-[11px] leading-snug text-steel-800 sm:text-xs">
                           {item.summary}
                         </p>
-                        <a
+                        <Link
                           href={`/content?type=${encodeURIComponent(item.model)}&id=${encodeURIComponent(item.id)}`}
                           className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
                         >
                           Read More -{">"}
-                        </a>
+                        </Link>
                       </article>
                     ))}
                   </div>

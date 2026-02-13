@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const productLinks = [
   "Scotch Yoke Pneumatic Actuators",
@@ -11,12 +12,12 @@ const productLinks = [
 ];
 
 const siteLinks = [
-  "Home",
-  "About Us",
-  "Products",
-  "Documentation",
-  "Careers",
-  "Contact Us",
+  { site: "Home", href: "#" },
+  { site: "About Us", href: "#" },
+  { site: "Products", href: "#" },
+  { site: "Documentations", href: "#" },
+  { site: "Carrers", href: "/careers" },
+  { site: "Contact Us", href: "#" },
 ];
 
 export default function Footer() {
@@ -26,7 +27,7 @@ export default function Footer() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[1fr_1.7fr]">
             <section className="border-b border-[#ff2301]! pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
-              <a href="/" className="inline-flex items-center">
+              <Link href="/" className="inline-flex items-center">
                 <Image
                   src="/logo.jpg"
                   alt="Credence Automation and Control Systems"
@@ -35,7 +36,7 @@ export default function Footer() {
                   style={{ width: "auto" }}
                   className="h-14 w-auto rounded-sm bg-white/70 p-1"
                 />
-              </a>
+              </Link>
 
               <p className="mt-6 max-w-sm text-sm leading-relaxed text-steel-900">
                 Connect with our expert team for products, services, and
@@ -159,12 +160,12 @@ export default function Footer() {
               <div className="border-t border-t-[#ff2301]! pt-5">
                 <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   {siteLinks.map((link) => (
-                    <li key={link}>
+                    <li key={link.site}>
                       <a
-                        href="#"
+                        href={link.href}
                         className="text-steel-900 transition hover:text-brand-700"
                       >
-                        {link}
+                        {link.site}
                       </a>
                     </li>
                   ))}

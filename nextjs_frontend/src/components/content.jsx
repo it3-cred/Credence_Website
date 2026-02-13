@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_BASE_URL, API_ENDPOINTS, apiUrl } from "@/lib/api";
+import Link from "next/link";
 
 function normalizeType(type) {
   return type === "achievement" ? "achievement" : "news";
@@ -287,9 +288,19 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
 
               {moreItems.length > 0 ? (
                 <div className="mt-10">
-                  <h2 className="text-2xl font-extrabold text-steel-900 sm:text-3xl">
-                    Check Out More {selectedType === "achievement" ? "Achievements" : "News"}
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-2xl font-extrabold text-steel-900 sm:text-3xl">
+                      Check Out More {selectedType === "achievement" ? "Achievements" : "News"}
+                    </h2>
+                    {selectedType === "news" ? (
+                      <Link
+                        href="/news"
+                        className="rounded-md border border-brand-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                      >
+                        Browse All News
+                      </Link>
+                    ) : null}
+                  </div>
 
                   <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {moreItems.map((entry) => (
@@ -306,12 +317,12 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
                         <p className="news-content-clamp mt-2 text-sm leading-snug text-steel-700">
                           {entry.summary}
                         </p>
-                        <a
+                        <Link
                           href={`/content?type=${encodeURIComponent(entry.model)}&id=${encodeURIComponent(entry.id)}`}
                           className="mt-3 inline-block text-sm font-medium text-brand-700 transition hover:text-brand-900"
                         >
                           Read More -{">"}
-                        </a>
+                        </Link>
                       </article>
                     ))}
                   </div>

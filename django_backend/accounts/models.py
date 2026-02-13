@@ -13,10 +13,7 @@ class User(models.Model):
         ],
     )
     email = models.EmailField(unique=True)
-    password_hash = models.CharField(
-        max_length=128,
-        validators=[MinLengthValidator(8)],
-    )
+    password_hash = models.CharField(max_length=128, blank=True, default="")
     company_name = models.CharField(
         max_length=200,
         blank=True,
@@ -52,3 +49,35 @@ class User(models.Model):
             except Exception:
                 self.password_hash = make_password(self.password_hash)
         super().save(*args, **kwargs)
+
+
+class EmailOTP(models.Model):
+    PURPOSE_SIGNUP = "SIGNUP"
+    PURPOSE_LOGIN = "LOGIN"
+    PURPOSE_CHOICES = [
+        (PURPOSE_SIGNUP, "Signup"),
+        (PURPOSE_LOGIN, "Login"),
+    ]
+
+    email = models.EmailField()
+    purpose = models.CharField(max_length=16, choices=PURPOSE_CHOICES)
+    otp_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "email_otps"
+        indexes = [
+            models.Index(fields=["email", "purpose", "is_used", "expires_at"]),
+        ]
+
+    def set_otp(self, raw_otp):
+        self.otp_hash = make_password(raw_otp)
+
+    def verify_otp(self, raw_otp):
+        return check_password(raw_otp, self.otp_hash)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
