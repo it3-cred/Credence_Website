@@ -6,6 +6,8 @@ export const API_BASE_URL =
 export const API_ENDPOINTS = {
   contentNews: "/api/content/news",
   contentAchievements: "/api/content/achievements",
+  powerSources: "/api/power-sources",
+  products: "/api/products",
 };
 
 export function apiUrl(path) {

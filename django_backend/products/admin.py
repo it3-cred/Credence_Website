@@ -1,45 +1,78 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, ProductCatalogue, ProductCategory
+from .models import Industry, PowerSource, Product, ProductCatalogue, ProductCategory, ProductIndustry
+
+
+class ProductIndustryInline(admin.TabularInline):
+    model = ProductIndustry
+    extra = 1
 
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "parent", "sort_order")
-    list_filter = ("parent",)
-    search_fields = ("name",)
+    list_display = ("id", "name", "slug", "parent", "sort_order", "is_visible")
+    list_filter = ("parent", "is_visible")
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(PowerSource)
+class PowerSourceAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "slug", "sort_order", "is_visible")
+    list_filter = ("is_visible",)
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(Industry)
+class IndustryAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "slug", "sort_order", "is_visible")
+    list_filter = ("is_visible",)
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "category", "slug", "has_image", "is_visible", "created_at")
-    list_filter = ("is_visible", "category", "created_at")
-    search_fields = ("name", "slug", "short_description")
+    list_display = ("id", "name", "power_source", "category", "slug", "has_image", "is_visible", "created_at")
+    list_filter = ("is_visible", "power_source", "category", "created_at")
+    search_fields = ("name", "slug", "short_summary", "description")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("image_preview",)
     fields = (
+        "power_source",
         "category",
         "name",
         "slug",
-        "short_description",
+        "short_summary",
+        "description",
         "image",
         "image_preview",
         "is_visible",
-        "features",
-        "operating_conditions",
-        "output_torque",
-        "temperature_range",
-        "max_allowable_operating_pressure",
-        "mounting_certifications",
-        "options",
-        "applications",
-        "control_options",
-        "power_source",
-        "enclosure_ratings",
-        "supply_media",
-        "testing_standards",
+        "output_torque_min",
+        "output_torque_max",
+        "thrust_min",
+        "thrust_max",
+        "spring_return_torque",
+        "double_acting_torque",
+        "operating_pressure_max",
+        "temperature_standard_min",
+        "temperature_standard_max",
+        "temperature_high_max",
+        "temperature_low_min",
+        "product_type",
+        "actuation_type",
+        "control_type",
+        "mounting_standard",
         "valve_compatibility",
+        "accessories_mounting",
+        "certifications",
+        "enclosure_rating",
+        "testing_standard",
+        "applications",
+        "features",
     )
+    inlines = [ProductIndustryInline]
 
     @admin.display(boolean=True, description="Has Image")
     def has_image(self, obj):
@@ -54,6 +87,12 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductCatalogue)
 class ProductCatalogueAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "product", "access_type", "is_visible", "created_at")
-    list_filter = ("access_type", "is_visible", "created_at")
-    search_fields = ("title", "description", "file_url")
+    list_display = ("id", "title", "doc_type", "product", "access_type", "is_visible", "sort_order", "created_at")
+    list_filter = ("doc_type", "access_type", "is_visible", "created_at")
+    search_fields = ("title", "description", "file")
+
+
+@admin.register(ProductIndustry)
+class ProductIndustryAdmin(admin.ModelAdmin):
+    list_display = ("id", "product", "industry")
+    search_fields = ("product__name", "industry__name")

@@ -6,82 +6,6 @@ import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import Link from "next/link";
 
-const products = [
-  {
-    id: 1,
-    name: "Scotch Yoke Pneumatic and Hydraulic Actuators",
-    slug: "scotch-yoke-pneumatic-and-hydraulic-actuators",
-    short_description: "Credence Scotch Yoke Pneumatic & Hydraulic Actuators - A Series",
-    summary:
-      "Credence Scotch Yoke Rotary Actuators are available with technologically superior features in low pressure pneumatic and high pressure hydraulic applications. The actuators are available in double acting and spring return configurations. Scotch Yoke is the preferred actuation technology for Oil & Gas, Petrochemical, Water and Waste Water, Metals and Mining, and other industries requiring automation solutions for large valves having high torques.",
-    image:
-      "https://credenceautomation.com/wp-content/uploads/2020/01/A03_17.png",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-  {
-    id: 2,
-    name: "Gas Over Oil (Gas Hydraulic) Rotary & Linear Actuators",
-    slug: "gas-over-oil-gas-hydraulic-rotary-linear-actuators",
-    short_description: "Gas Hydraulic Actuators or Gas Over Oil Actuators for Oil and Gas Pipelines",
-    summary:
-      "Credence Gas Over Oil (Gas Hydraulic) Actuators are available in linear and rotary configurations suitable for gas transmission pipelines and compressor station automation. Options include local manual, local and remote electric, line break protection, rate of pressure drop protection, high pressure close and low pressure close. Additional customized control configurations are available on request.",
-    image:
-      "https://credenceautomation.com/wp-content/uploads/2020/06/Gas-Over-oil-r1.-e1578733519171.png",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-  {
-    id: 3,
-    name: "Linear Pneumatic and Hydraulic Actuators",
-    slug: "linear-pneumatic-and-hydraulic-actuators",
-    short_description: "Credence-Linear-Pneumatic-Hydraulic-Actuators",
-    summary:
-      "Credence offers a range of customized piston type linear actuators in double acting and spring return configurations for automation of large gate, globe and specialized valves. These actuators support on-off and modulation duty control and are available in stay put or fail-safe configurations including fail open, fail close, fail to extend and fail to retract.",
-    image:
-      "https://credenceautomation.com/wp-content/uploads/2020/06/Credence-Linear-Pneumaitc-Hydraulic-Actuators-e1585855414894.png",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-  {
-    id: 4,
-    name: "Rack and Pinion Hydraulic Actuators",
-    slug: "rack-and-pinion-hydraulic-actuators",
-    short_description:
-      "Credence Double Acting, Spring Return, Linear and Rotary Hydraulic Actuators for Submerged Service Applications",
-    summary:
-      "Credence offers a range of customized hydraulic actuators for linear gate and globe valves and rotary ball, butterfly and plug valves. Suitable for sub sea and submerged service valve applications. Actuators come with dual redundant sealing as standard and are available in linear and rotary, double acting and spring return configurations.",
-    image:
-      "https://credenceautomation.com/wp-content/uploads/2023/02/RP_BFY_4-removebg-preview-433x480.png",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-  {
-    id: 5,
-    name: "Electric Quarter Turn Actuator",
-    slug: "electric-quarter-turn-actuator",
-    short_description: "Smart Electric Actuator for Rotary Valve Automation",
-    summary:
-      "Compact electric quarter turn actuator designed for dependable valve control with local override, position feedback and weatherproof construction options for harsh field conditions.",
-    image:
-      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1600&q=80&auto=format&fit=crop",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-  {
-    id: 6,
-    name: "Heavy Duty Pneumatic Rack and Pinion Actuator",
-    slug: "heavy-duty-pneumatic-rack-and-pinion-actuator",
-    short_description: "High-Cycle Rack and Pinion Pneumatic Actuator",
-    summary:
-      "Engineered for fast response and repeatable torque output in high-cycle process automation with configurable spring return and double acting operation modes.",
-    image:
-      "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop",
-    is_visible: true,
-    catalogue_url: "#",
-  },
-];
-
 const industries = [
   {
     id: 1,
@@ -144,6 +68,7 @@ const partnerCompanies = [
 
 const partnerCardBackgrounds = [
   
+  
 ];
 
 function chunkItems(items, size) {
@@ -158,9 +83,10 @@ export default function LandingPage() {
   const [updates, setUpdates] = useState([]);
   const [updatesLoading, setUpdatesLoading] = useState(true);
   const [updatesError, setUpdatesError] = useState("");
+  const [powerSources, setPowerSources] = useState([]);
+  const [powerSourcesError, setPowerSourcesError] = useState("");
 
   const visibleUpdates = useMemo(() => updates.filter((item) => item.is_visible), [updates]);
-  const visibleProducts = useMemo(() => products.filter((item) => item.is_visible), []);
 
   const [itemsPerSlide, setItemsPerSlide] = useState(3);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -229,6 +155,37 @@ export default function LandingPage() {
     }
 
     fetchContentUpdates();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchPowerSources() {
+      setPowerSourcesError("");
+      try {
+        const response = await fetch(apiUrl(API_ENDPOINTS.powerSources), { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error("Failed to fetch power sources.");
+        }
+        const json = await response.json();
+        if (isMounted) {
+          setPowerSources(json.results || []);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError" && isMounted) {
+          setPowerSourcesError("Unable to load product portfolio right now.");
+          setPowerSources([]);
+        }
+      }
+    }
+
+    fetchPowerSources();
 
     return () => {
       isMounted = false;
@@ -383,39 +340,39 @@ export default function LandingPage() {
           </h2>
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleProducts.map((product) => (
+            {powerSources.map((source) => (
               <article
-                key={product.slug}
-                className="product-portfolio-card overflow-hidden rounded-2xl border border-brand-200 bg-white"
+                key={source.id}
+                className="product-portfolio-card overflow-hidden rounded-2xl border border-brand-200 bg-white cursor-pointer"
               >
                 <div className="h-[17rem] w-full bg-steel-200 sm:h-[18rem]">
                   <img
-                    src={product.image}
-                    alt={product.name}
+                    src={source.image_url || "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop"}
+                    alt={source.name}
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />
                 </div>
                 <div className="p-5">
-                  <h3 className="overflow-hidden text-ellipsis text-lg font-bold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                    {product.name}
+                  <h3 className="overflow-hidden text-ellipsis text-xl font-bold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                    {source.name}
                   </h3>
-                  <p className="mt-2 overflow-hidden text-ellipsis text-sm font-semibold text-brand-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                    {product.short_description}
+                  <p className="mt-2 overflow-hidden text-ellipsis text-base leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                    {source.summary}
                   </p>
-                  <p className="mt-2 overflow-hidden text-ellipsis text-sm leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
-                    {product.summary}
-                  </p>
-                  <button
+                  {/* <button
                     type="button"
                     className="mt-4 rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white cursor-pointer"
                   >
                     View Details
-                  </button>
+                  </button> */}
                 </div>
               </article>
             ))}
           </div>
+          {powerSourcesError ? (
+            <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{powerSourcesError}</p>
+          ) : null}
         </div>
       </section>
 
