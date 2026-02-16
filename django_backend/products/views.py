@@ -1,7 +1,9 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.db.models import Q
+from decimal import Decimal, InvalidOperation
 
-from .models import PowerSource, Product
+from .models import Industry, PowerSource, Product
 
 
 def _build_file_url(request, file_field):
@@ -12,51 +14,90 @@ def _build_file_url(request, file_field):
 
 @api_view(["GET"])
 def get_products(request):
-    products_qs = Product.objects.filter(is_visible=True).select_related("category", "power_source").prefetch_related("industries").order_by("id")
-    data = [
-        {
-            "id": item.id,
-            "category_id": item.category_id,
-            "category_name": item.category.name if item.category else None,
-            "power_source": {
-                "id": item.power_source_id,
-                "name": item.power_source.name,
-                "slug": item.power_source.slug,
-            },
-            "industries": [{"id": ind.id, "name": ind.name, "slug": ind.slug} for ind in item.industries.all()],
-            "name": item.name,
-            "slug": item.slug,
-            "short_summary": item.short_summary,
-            "description": item.description,
-            "image_url": _build_file_url(request, item.image),
-            "is_visible": item.is_visible,
-            "output_torque_min": item.output_torque_min,
-            "output_torque_max": item.output_torque_max,
-            "thrust_min": item.thrust_min,
-            "thrust_max": item.thrust_max,
-            "spring_return_torque": item.spring_return_torque,
-            "double_acting_torque": item.double_acting_torque,
-            "operating_pressure_max": item.operating_pressure_max,
-            "temperature_standard_min": item.temperature_standard_min,
-            "temperature_standard_max": item.temperature_standard_max,
-            "temperature_high_max": item.temperature_high_max,
-            "temperature_low_min": item.temperature_low_min,
-            "product_type": item.product_type,
-            "actuation_type": item.actuation_type,
-            "control_type": item.control_type,
-            "mounting_standard": item.mounting_standard,
-            "accessories_mounting": item.accessories_mounting,
-            "certifications": item.certifications,
-            "enclosure_rating": item.enclosure_rating,
-            "testing_standard": item.testing_standard,
-            "features": item.features,
-            "applications": item.applications,
-            "valve_compatibility": item.valve_compatibility,
-            "created_at": item.created_at,
-            "updated_at": item.updated_at,
-        }
-        for item in products_qs
-    ]
+    power_source_slug = request.GET.get("power_source", "").strip()
+    industry_slugs = [slug.strip() for slug in request.GET.get("industries", "").split(",") if slug.strip()]
+    torque_min_raw = request.GET.get("torque_min", "").strip()
+    torque_max_raw = request.GET.get("torque_max", "").strip()
+
+    torque_min = None
+    torque_max = None
+    try:
+        if torque_min_raw:
+            torque_min = Decimal(torque_min_raw)
+    except (InvalidOperation, ValueError):
+        torque_min = None
+    try:
+        if torque_max_raw:
+            torque_max = Decimal(torque_max_raw)
+    except (InvalidOperation, ValueError):
+        torque_max = None
+
+    if torque_min is not None and torque_max is not None and torque_min > torque_max:
+        torque_min, torque_max = torque_max, torque_min
+
+    products_qs = (
+        Product.objects.filter(is_visible=True)
+        .select_related("power_source")
+        .prefetch_related("industries", "images")
+        .order_by("id")
+    )
+
+    if power_source_slug:
+        products_qs = products_qs.filter(power_source__slug=power_source_slug)
+
+    if industry_slugs:
+        products_qs = products_qs.filter(industries__slug__in=industry_slugs)
+
+    if torque_min is not None and torque_max is not None:
+        products_qs = products_qs.filter(
+            Q(torque_min_nm__isnull=False)
+            & Q(torque_max_nm__isnull=False)
+            & Q(torque_min_nm__lte=torque_min)
+            & Q(torque_max_nm__gte=torque_max)
+        )
+    elif torque_min is not None:
+        products_qs = products_qs.filter(
+            Q(torque_min_nm__isnull=False)
+            & Q(torque_max_nm__isnull=False)
+            & Q(torque_min_nm__lte=torque_min)
+            & Q(torque_max_nm__gte=torque_min)
+        )
+    elif torque_max is not None:
+        products_qs = products_qs.filter(
+            Q(torque_min_nm__isnull=False)
+            & Q(torque_max_nm__isnull=False)
+            & Q(torque_min_nm__lte=torque_max)
+            & Q(torque_max_nm__gte=torque_max)
+        )
+
+    products_qs = products_qs.distinct()
+    data = []
+    for item in products_qs:
+        image_urls = [_build_file_url(request, image.image) for image in item.images.all() if image.image]
+        data.append(
+            {
+                "id": item.id,
+                "power_source": {
+                    "id": item.power_source_id,
+                    "name": item.power_source.name,
+                    "slug": item.power_source.slug,
+                },
+                "industries": [{"id": ind.id, "name": ind.name, "slug": ind.slug} for ind in item.industries.all()],
+                "name": item.name,
+                "slug": item.slug,
+                "short_summary": item.short_summary,
+                "description": item.description,
+                "image_url": image_urls[0] if image_urls else "",
+                "image_urls": image_urls,
+                "is_visible": item.is_visible,
+                "torque_min_nm": item.torque_min_nm,
+                "torque_max_nm": item.torque_max_nm,
+                "specification": item.specification,
+                "features": item.features,
+                "created_at": item.created_at,
+                "updated_at": item.updated_at,
+            }
+        )
     return Response({"count": len(data), "results": data})
 
 
@@ -77,4 +118,11 @@ def get_power_sources(request):
         }
         for item in power_sources_qs
     ]
+    return Response({"count": len(data), "results": data})
+
+
+@api_view(["GET"])
+def get_industries(request):
+    industries_qs = Industry.objects.filter(is_visible=True).order_by("sort_order", "name")
+    data = [{"id": item.id, "name": item.name, "slug": item.slug} for item in industries_qs]
     return Response({"count": len(data), "results": data})

@@ -118,6 +118,7 @@ export default function LandingPage() {
           model: "news",
           category: "News",
           title: item.title || "",
+          slug: item.slug,
           summary: item.summary || "",
           is_visible: Boolean(item.is_visible),
           created_at: item.created_at,
@@ -129,6 +130,7 @@ export default function LandingPage() {
           model: "achievement",
           category: "Achievement",
           title: item.title || "",
+          slug: item.slug,
           summary: item.summary || "",
           is_visible: Boolean(item.is_visible),
           created_at: item.created_at,
@@ -263,7 +265,7 @@ export default function LandingPage() {
       <section>
         <div className="bg-[#e7d7b7]">
           <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
                 Latest News & Achievements
               </p>
@@ -304,7 +306,7 @@ export default function LandingPage() {
                     {slide.map((item) => (
                       <article
                         key={`${item.model}-${item.id}`}
-                        className="news-card flex min-h-[210px] flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-[225px] sm:p-4"
+                        className="news-card flex min-h-[200px] flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-[210px] sm:p-2"
                       >
                         <p className="news-title-clamp text-[11px] font-medium text-brand-700 sm:text-xs">
                           {item.category}
@@ -316,7 +318,7 @@ export default function LandingPage() {
                           {item.summary}
                         </p>
                         <Link
-                          href={`/content?type=${encodeURIComponent(item.model)}&id=${encodeURIComponent(item.id)}`}
+                          href={`/${encodeURIComponent(item.model)}/${encodeURIComponent(item.slug || "item")}-${encodeURIComponent(item.id)}`}
                           className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
                         >
                           Read More -{">"}
@@ -341,9 +343,10 @@ export default function LandingPage() {
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {powerSources.map((source) => (
-              <article
+              <Link
                 key={source.id}
-                className="product-portfolio-card overflow-hidden rounded-2xl border border-brand-200 bg-white cursor-pointer"
+                href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
+                className="product-portfolio-card overflow-hidden rounded-2xl border border-brand-200 bg-white cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="h-[17rem] w-full bg-steel-200 sm:h-[18rem]">
                   <img
@@ -360,14 +363,8 @@ export default function LandingPage() {
                   <p className="mt-2 overflow-hidden text-ellipsis text-base leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
                     {source.summary}
                   </p>
-                  {/* <button
-                    type="button"
-                    className="mt-4 rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white cursor-pointer"
-                  >
-                    View Details
-                  </button> */}
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
           {powerSourcesError ? (

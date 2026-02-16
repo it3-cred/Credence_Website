@@ -1,7 +1,9 @@
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Achievement, News
+from .models import Achievement, AnnouncementRibbon, News
 
 
 def _build_file_url(request, file_field):
@@ -24,6 +26,7 @@ def get_news(request):
             {
                 "id": item.id,
                 "title": item.title,
+                "slug": item.slug,
                 "summary": item.summary,
                 "content": item.content,
                 "cover_image_url": image_urls[0] if image_urls else "",
@@ -51,6 +54,7 @@ def get_achievements(request):
             {
                 "id": item.id,
                 "title": item.title,
+                "slug": item.slug,
                 "summary": item.summary,
                 "content": item.content,
                 "year": item.year,
@@ -63,3 +67,49 @@ def get_achievements(request):
         )
 
     return Response({"count": len(data), "results": data})
+
+
+@api_view(["GET"])
+def get_latest_announcement(request):
+    now = timezone.now()
+    announcements_qs = (
+        AnnouncementRibbon.objects.filter(is_enabled=True)
+        .filter(Q(starts_at__isnull=True) | Q(starts_at__lte=now))
+        .filter(Q(ends_at__isnull=True) | Q(ends_at__gte=now))
+        .order_by("-updated_at")
+    )
+
+    announcements = list(announcements_qs)
+    if not announcements:
+        return Response({"enabled": False, "result": None})
+
+    latest = announcements[0]
+    results = [
+        {
+            "id": item.id,
+            "text": item.text or "",
+            "message": item.message or "",
+            "link_url": item.link_url or "",
+            "starts_at": item.starts_at,
+            "ends_at": item.ends_at,
+            "updated_at": item.updated_at,
+        }
+        for item in announcements
+    ]
+
+    return Response(
+        {
+            "enabled": True,
+            "count": len(results),
+            "results": results,
+            "result": {
+                "id": latest.id,
+                "text": latest.text or "",
+                "message": latest.message or "",
+                "link_url": latest.link_url or "",
+                "starts_at": latest.starts_at,
+                "ends_at": latest.ends_at,
+                "updated_at": latest.updated_at,
+            },
+        }
+    )

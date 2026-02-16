@@ -21,15 +21,17 @@ class AnnouncementRibbonAdmin(admin.ModelAdmin):
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "year", "is_visible", "created_at")
+    list_display = ("id", "title", "slug", "year", "is_visible", "created_at")
     list_filter = ("is_visible", "year")
-    search_fields = ("title", "summary", "content")
+    search_fields = ("title", "slug", "summary", "content")
+    prepopulated_fields = {"slug": ("title",)}
     inlines = [AchievementImageInline]
 
 
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "is_visible", "created_at")
+    list_display = ("id", "title", "slug", "is_visible", "created_at")
     list_filter = ("is_visible", "created_at")
-    search_fields = ("title", "summary", "content")
+    search_fields = ("title", "slug", "summary", "content")
+    prepopulated_fields = {"slug": ("title",)}
     inlines = [NewsImageInline]

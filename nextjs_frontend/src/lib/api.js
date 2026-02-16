@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   contentNews: "/api/content/news",
   contentAchievements: "/api/content/achievements",
   powerSources: "/api/power-sources",
+  industries: "/api/industries",
   products: "/api/products",
 };
 

@@ -41,6 +41,7 @@ class Achievement(models.Model):
         max_length=200,
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Title cannot be blank.")],
     )
+    slug = models.SlugField(max_length=220, unique=True, null=True, blank=True)
     summary = models.TextField(
         validators=[
             MinLengthValidator(1),
@@ -74,6 +75,7 @@ class News(models.Model):
         max_length=200,
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Title cannot be blank.")],
     )
+    slug = models.SlugField(max_length=220, unique=True, null=True, blank=True)
     summary = models.TextField(
         validators=[
             MinLengthValidator(1),

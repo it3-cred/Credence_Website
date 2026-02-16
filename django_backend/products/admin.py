@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from .models import Industry, PowerSource, Product, ProductCatalogue, ProductCategory, ProductIndustry
+from .models import Industry, PowerSource, Product, ProductCatalogue, ProductImage, ProductIndustry
 
 
 class ProductIndustryInline(admin.TabularInline):
@@ -8,12 +7,9 @@ class ProductIndustryInline(admin.TabularInline):
     extra = 1
 
 
-@admin.register(ProductCategory)
-class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "slug", "parent", "sort_order", "is_visible")
-    list_filter = ("parent", "is_visible")
-    search_fields = ("name", "slug")
-    prepopulated_fields = {"slug": ("name",)}
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
 
 
 @admin.register(PowerSource)
@@ -34,55 +30,23 @@ class IndustryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "power_source", "category", "slug", "has_image", "is_visible", "created_at")
-    list_filter = ("is_visible", "power_source", "category", "created_at")
+    list_display = ("id", "name", "power_source", "slug", "is_visible", "created_at")
+    list_filter = ("is_visible", "power_source", "created_at")
     search_fields = ("name", "slug", "short_summary", "description")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("image_preview",)
     fields = (
         "power_source",
-        "category",
         "name",
         "slug",
         "short_summary",
         "description",
-        "image",
-        "image_preview",
         "is_visible",
-        "output_torque_min",
-        "output_torque_max",
-        "thrust_min",
-        "thrust_max",
-        "spring_return_torque",
-        "double_acting_torque",
-        "operating_pressure_max",
-        "temperature_standard_min",
-        "temperature_standard_max",
-        "temperature_high_max",
-        "temperature_low_min",
-        "product_type",
-        "actuation_type",
-        "control_type",
-        "mounting_standard",
-        "valve_compatibility",
-        "accessories_mounting",
-        "certifications",
-        "enclosure_rating",
-        "testing_standard",
-        "applications",
+        "torque_min_nm",
+        "torque_max_nm",
+        "specification",
         "features",
     )
-    inlines = [ProductIndustryInline]
-
-    @admin.display(boolean=True, description="Has Image")
-    def has_image(self, obj):
-        return bool(obj.image)
-
-    @admin.display(description="Image Preview")
-    def image_preview(self, obj):
-        if not obj.image:
-            return "No image uploaded."
-        return format_html('<img src="{}" style="max-height: 120px; width: auto;" />', obj.image.url)
+    inlines = [ProductImageInline, ProductIndustryInline]
 
 
 @admin.register(ProductCatalogue)
@@ -96,3 +60,10 @@ class ProductCatalogueAdmin(admin.ModelAdmin):
 class ProductIndustryAdmin(admin.ModelAdmin):
     list_display = ("id", "product", "industry")
     search_fields = ("product__name", "industry__name")
+
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ("id", "product", "display_order", "created_at")
+    list_filter = ("product",)
+    search_fields = ("product__name",)

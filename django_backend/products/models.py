@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinLengthValidator, RegexValidator
 from django.db import models
-from django.utils import timezone
 
 MAX_PRODUCT_IMAGE_FILE_SIZE_BYTES = 6 * 1024 * 1024  # 6 MB
 MAX_PRODUCT_DOCUMENT_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB
@@ -74,42 +73,9 @@ class Industry(models.Model):
         return self.name
 
 
-class ProductCategory(models.Model):
-    name = models.CharField(
-        max_length=150,
-        validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Name cannot be blank.")],
-    )
-    slug = models.SlugField(max_length=200, unique=True, null=True, blank=True)
-    parent = models.ForeignKey(
-        "self",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="children",
-    )
-    sort_order = models.IntegerField(default=0)
-    is_visible = models.BooleanField(default=True)
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "product_categories"
-        ordering = ["sort_order", "name"]
-
-    def __str__(self):
-        return self.name
-
-
 class Product(models.Model):
     power_source = models.ForeignKey(
         PowerSource,
-        on_delete=models.PROTECT,
-        related_name="products",
-        null=True,
-        blank=True,
-    )
-    category = models.ForeignKey(
-        ProductCategory,
         on_delete=models.PROTECT,
         related_name="products",
         null=True,
@@ -130,40 +96,10 @@ class Product(models.Model):
         blank=True,
         validators=[RegexValidator(r".*\S.*", "Description cannot be blank.")],
     )
-    image = models.ImageField(
-        upload_to="products/",
-        max_length=500,
-        blank=True,
-        validators=[
-            FileExtensionValidator(allowed_extensions=["png", "webp"]),
-            validate_product_image_file_size,
-        ],
-    )
     is_visible = models.BooleanField(default=True)
-
-    output_torque_min = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    output_torque_max = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    thrust_min = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    thrust_max = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    spring_return_torque = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    double_acting_torque = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    operating_pressure_max = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    temperature_standard_min = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    temperature_standard_max = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    temperature_high_max = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-    temperature_low_min = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
-
-    product_type = models.TextField(blank=True, validators=[RegexValidator(r".*\S.*", "Product type cannot be blank.")])
-    actuation_type = models.TextField(blank=True, validators=[RegexValidator(r".*\S.*", "Actuation type cannot be blank.")])
-    control_type = models.TextField(blank=True, validators=[RegexValidator(r".*\S.*", "Control type cannot be blank.")])
-
-    mounting_standard = models.JSONField(null=True, blank=True)
-    valve_compatibility = models.JSONField(null=True, blank=True)
-    accessories_mounting = models.JSONField(null=True, blank=True)
-    certifications = models.JSONField(null=True, blank=True)
-    enclosure_rating = models.JSONField(null=True, blank=True)
-    testing_standard = models.JSONField(null=True, blank=True)
-    applications = models.JSONField(null=True, blank=True)
+    torque_min_nm = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    torque_max_nm = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    specification = models.JSONField(null=True, blank=True)
     features = models.JSONField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -235,6 +171,24 @@ class ProductCatalogue(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(
+        upload_to="products/",
+        max_length=500,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_product_image_file_size,
+        ],
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "product_images"
+        ordering = ("display_order", "id")
 
 
 class ProductIndustry(models.Model):

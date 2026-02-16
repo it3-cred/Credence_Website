@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const navItems = [
   { label: "Products", href: "/products" },
-  { label: "Solutions", href: "#" },
+  // { label: "Solutions", href: "#" },
   { label: "Resources", href: "#" },
   { label: "News", href: "/news" },
   { label: "Distributors", href: "/distributors" },
@@ -19,10 +19,14 @@ export default function Navbar() {
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [isRibbonClosed, setIsRibbonClosed] = useState(false);
 
   const getApiBase = () => {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
+    if (process.env.NEXT_PUBLIC_API_BASE_URL)
+      return process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (typeof window !== "undefined")
+      return `${window.location.protocol}//${window.location.hostname}:8000`;
     return "http://127.0.0.1:8000";
   };
 
@@ -55,6 +59,44 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadAnnouncement = async () => {
+      try {
+        const response = await fetch(
+          `${getApiBase()}/api/content/announcement-ribbon`,
+          {
+            method: "GET",
+          },
+        );
+        const payload = await response.json();
+        if (!isMounted) return;
+        const rows = Array.isArray(payload?.results)
+          ? payload.results
+          : payload?.result
+            ? [payload.result]
+            : [];
+        if (payload?.enabled && rows.length > 0) {
+          setAnnouncements(rows);
+          setIsRibbonClosed(false);
+          return;
+        }
+        setAnnouncements([]);
+      } catch (error) {
+        if (isMounted) {
+          setAnnouncements([]);
+        }
+      }
+    };
+
+    loadAnnouncement();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const closeUserMenu = () => setIsUserMenuOpen(false);
     window.addEventListener("click", closeUserMenu);
     return () => window.removeEventListener("click", closeUserMenu);
@@ -74,8 +116,73 @@ export default function Navbar() {
     window.dispatchEvent(new Event("auth-changed"));
   };
 
+  const hasRibbon = !isRibbonClosed && announcements.length > 0;
+  const hasMultipleAnnouncements = announcements.length > 1;
+  const latestAnnouncement = announcements[0] || null;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white backdrop-blur">
+      {hasRibbon ? (
+        <div className="border-b border-zinc-200 bg-brand-500 text-white">
+          <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-2 py-2 sm:px-4 lg:px-6">
+            <div className="min-w-0 flex-1 overflow-hidden text-center">
+              {hasMultipleAnnouncements ? (
+                <div className="ribbon-marquee-track inline-flex whitespace-nowrap text-xs font-semibold tracking-[0.02em]">
+                  {announcements.map((item, index) => {
+                    const text = item.text || item.message;
+                    const key = `${item.id}-${index}`;
+                    return item.link_url ? (
+                      <a
+                        key={key}
+                        href={item.link_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block pr-12 text-white underline-offset-4 hover:underline"
+                      >
+                        Alert: {text}
+                      </a>
+                    ) : (
+                      <span key={key} className="inline-block pr-12">
+                        Alert: {text}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : latestAnnouncement?.link_url ? (
+                <a
+                  href={latestAnnouncement.link_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ribbon-blink inline-block text-xs font-semibold tracking-[0.02em] text-white underline-offset-4 transition hover:underline"
+                >
+                  Alert: {latestAnnouncement.text || latestAnnouncement.message}
+                </a>
+              ) : (
+                <p className="ribbon-blink text-xs font-semibold tracking-[0.02em] text-white">
+                  Alert: {latestAnnouncement?.text || latestAnnouncement?.message}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsRibbonClosed(true)}
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-white transition hover:bg-white/15"
+              aria-label="Close announcement ribbon"
+              title="Close announcement ribbon"
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center">
           <Image
@@ -157,7 +264,13 @@ export default function Navbar() {
                 aria-label="Open user menu"
                 title="User menu"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <circle cx="12" cy="8" r="4" />
                   <path d="M4 20a8 8 0 0 1 16 0" />
                 </svg>
@@ -330,6 +443,35 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      <style jsx>{`
+        .ribbon-marquee-track {
+          width: max-content;
+          animation: ribbon-marquee 18s linear infinite;
+        }
+        .ribbon-marquee-track:hover {
+          animation-play-state: paused;
+        }
+        .ribbon-blink {
+          animation: ribbon-blink 1.2s ease-in-out infinite;
+        }
+        @keyframes ribbon-marquee {
+          0% {
+            transform: translateX(100%);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
+        }
+        @keyframes ribbon-blink {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.45;
+          }
+        }
+      `}</style>
     </header>
   );
 }
