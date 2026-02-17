@@ -9,8 +9,14 @@ export const API_ENDPOINTS = {
   powerSources: "/api/power-sources",
   industries: "/api/industries",
   products: "/api/products",
+  catalogueEmailRequest: "/api/leads/catalogue-email-request",
 };
 
 export function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
+}
+
+export function productDetailPath(slug, id) {
+  const safeSlug = encodeURIComponent(slug || "product");
+  return `/api/products/${safeSlug}-${encodeURIComponent(id)}`;
 }

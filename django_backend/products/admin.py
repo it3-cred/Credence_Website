@@ -43,6 +43,8 @@ class ProductAdmin(admin.ModelAdmin):
         "is_visible",
         "torque_min_nm",
         "torque_max_nm",
+        "thrust_min_n",
+        "thrust_max_n",
         "specification",
         "features",
     )

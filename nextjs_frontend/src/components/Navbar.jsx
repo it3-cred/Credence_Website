@@ -121,7 +121,7 @@ export default function Navbar() {
   const latestAnnouncement = announcements[0] || null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-steel-200 bg-white/95 backdrop-blur">
       {hasRibbon ? (
         <div className="border-b border-zinc-200 bg-brand-500 text-white">
           <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-2 py-2 sm:px-4 lg:px-6">
@@ -183,7 +183,7 @@ export default function Navbar() {
           </div>
         </div>
       ) : null}
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.jpg"
@@ -204,14 +204,14 @@ export default function Navbar() {
               {item.href.startsWith("/") ? (
                 <Link
                   href={item.href}
-                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
+                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
                 >
                   {item.label}
                 </Link>
               ) : (
                 <a
                   href={item.href}
-                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-[#FF2300]"
+                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
                 >
                   {item.label}
                 </a>
@@ -224,7 +224,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center cursor-pointer justify-center rounded-md border border-zinc-300 text-zinc-800 transition hover:bg-zinc-50"
+              className="inline-flex h-10 w-10 items-center cursor-pointer justify-center rounded-md border border-steel-300 text-zinc-800 transition hover:bg-zinc-50"
               onClick={() => setIsDesktopSearchOpen((prev) => !prev)}
               aria-expanded={isDesktopSearchOpen}
               aria-label="Toggle desktop search"
@@ -297,17 +297,11 @@ export default function Navbar() {
               ) : null}
             </div>
           ) : (
-            <Link
-              href="/auth"
-              className="rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
-            >
+            <Link href="/auth" className="rounded-md cursor-pointer border border-steel-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50">
               Login
             </Link>
           )}
-          <button
-            type="button"
-            className="rounded-md border-2 border-transparent cursor-pointer bg-[#FF2300] px-3 py-2 text-sm font-semibold text-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[0.98] hover:border-[#FF2300] hover:bg-white hover:text-[#FF2300]"
-          >
+          <button type="button" className="rounded-md cursor-pointer bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-600">
             Request Quote
           </button>
         </div>

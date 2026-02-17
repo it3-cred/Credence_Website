@@ -346,9 +346,9 @@ export default function LandingPage() {
               <Link
                 key={source.id}
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
-                className="product-portfolio-card overflow-hidden rounded-2xl border border-brand-200 bg-white cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md"
+                className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
               >
-                <div className="h-[17rem] w-full bg-steel-200 sm:h-[18rem]">
+                <div className="h-[14rem] w-full bg-steel-100 sm:h-[16rem]">
                   <img
                     src={source.image_url || "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop"}
                     alt={source.name}
@@ -356,11 +356,11 @@ export default function LandingPage() {
                     loading="lazy"
                   />
                 </div>
-                <div className="p-5">
-                  <h3 className="overflow-hidden text-ellipsis text-xl font-bold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                <div className="p-4">
+                  <h3 className="overflow-hidden text-ellipsis text-lg font-semibold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                     {source.name}
                   </h3>
-                  <p className="mt-2 overflow-hidden text-ellipsis text-base leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+                  <p className="mt-2 overflow-hidden text-ellipsis text-sm leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                     {source.summary}
                   </p>
                 </div>

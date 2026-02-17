@@ -99,6 +99,8 @@ class Product(models.Model):
     is_visible = models.BooleanField(default=True)
     torque_min_nm = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
     torque_max_nm = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    thrust_min_n = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    thrust_max_n = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
     specification = models.JSONField(null=True, blank=True)
     features = models.JSONField(null=True, blank=True)
 
