@@ -234,7 +234,7 @@ export default function LandingPage() {
       <main className="bg-steel-50">
       <section className="w-full">
         <div
-          className="relative min-h-[220px] w-full bg-cover bg-center sm:min-h-[300px] md:min-h-[360px] lg:min-h-[350px]"
+          className="relative min-h-55 w-full bg-cover bg-center sm:min-h-75 md:min-h-90 lg:min-h-87.5"
           style={{
             backgroundImage:
               "url('https://www.karenaudit.com/wp-content/uploads/2024/03/steel-metal-celik-isci.jpg')",
@@ -242,8 +242,8 @@ export default function LandingPage() {
         >
           <div className="absolute inset-0 bg-linear-to-r from-steel-900/70 via-steel-900/35 to-steel-900/10" />
           <div className="relative mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-            <div className="w-[90vw] max-w-[430px] rounded-xl border border-white/40 bg-steel-900/50 p-4 backdrop-blur-[4px] sm:rounded-2xl sm:p-6">
-              <h1 className="max-w-[10ch] break-words text-[clamp(2.8rem,3.4vw,3.4rem)] font-extrabold leading-[0.92] tracking-tight text-white">
+            <div className="w-[90vw] max-w-107.5 rounded-xl border border-white/40 bg-steel-900/50 p-4 backdrop-blur-xs sm:rounded-2xl sm:p-6">
+              <h1 className="max-w-[10ch] wrap-break-word text-[clamp(2.8rem,3.4vw,3.4rem)] font-extrabold leading-[0.92] tracking-tight text-white">
                 <span className="text-brand-500">Reliability</span>
                 <br />
                 engineered
@@ -307,7 +307,7 @@ export default function LandingPage() {
                     {slide.map((item) => (
                       <article
                         key={`${item.model}-${item.id}`}
-                        className="news-card flex min-h-[200px] flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-[210px] sm:p-2"
+                        className="news-card flex min-h-50 flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-52.5 sm:p-2"
                       >
                         <p className="news-title-clamp text-[11px] font-medium text-brand-700 sm:text-xs">
                           {item.category}
@@ -349,7 +349,7 @@ export default function LandingPage() {
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
                 className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
               >
-                <div className="relative h-[14rem] w-full bg-steel-100 sm:h-[16rem]">
+                <div className="relative h-56 w-full bg-steel-100 sm:h-64">
                   <Image
                     src={source.image_url || "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop"}
                     alt={source.name}
@@ -404,7 +404,7 @@ export default function LandingPage() {
               {industryTrackItems.map((industry, index) => (
                 <article
                   key={`${industry.id}-${index}`}
-                  className="relative w-[78vw] max-w-[280px] shrink-0 overflow-hidden rounded-xl border border-brand-200"
+                  className="relative w-[78vw] max-w-70 shrink-0 overflow-hidden rounded-xl border border-brand-200"
                 >
                   <div
                     className="h-32 bg-cover bg-center sm:h-36"

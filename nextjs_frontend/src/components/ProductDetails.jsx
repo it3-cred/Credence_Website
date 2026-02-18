@@ -234,7 +234,7 @@ export default function ProductDetails({ slugAndId = "" }) {
             <>
               <div className="grid gap-6 border-y border-steel-300 py-6 lg:grid-cols-2">
                 <div className="px-1">
-                  <div className="relative h-[22rem] w-full overflow-hidden rounded-lg border border-steel-300 bg-white shadow-[0_4px_14px_rgba(23,28,34,0.08)] sm:h-[26rem]">
+                  <div className="relative h-88 w-full overflow-hidden rounded-lg border border-steel-300 bg-white shadow-[0_4px_14px_rgba(23,28,34,0.08)] sm:h-104">
                     <Image
                       src={imageUrls[activeImage] || FALLBACK_IMAGE}
                       alt={product.name}
@@ -305,7 +305,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   >
                     Features
                     <span
-                      className={`absolute bottom-0 left-0 h-[2px] w-full bg-brand-500 transition-transform duration-200 ${
+                      className={`absolute bottom-0 left-0 h-0.5 w-full bg-brand-500 transition-transform duration-200 ${
                         activeTab === TABS.features ? "scale-x-100" : "scale-x-0"
                       } origin-left`}
                     />
@@ -319,7 +319,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   >
                     Specifications
                     <span
-                      className={`absolute bottom-0 left-0 h-[2px] w-full bg-brand-500 transition-transform duration-200 ${
+                      className={`absolute bottom-0 left-0 h-0.5 w-full bg-brand-500 transition-transform duration-200 ${
                         activeTab === TABS.specifications ? "scale-x-100" : "scale-x-0"
                       } origin-left`}
                     />
@@ -333,7 +333,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   >
                     Documents & Drawings
                     <span
-                      className={`absolute bottom-0 left-0 h-[2px] w-full bg-brand-500 transition-transform duration-200 ${
+                      className={`absolute bottom-0 left-0 h-0.5 w-full bg-brand-500 transition-transform duration-200 ${
                         activeTab === TABS.documents ? "scale-x-100" : "scale-x-0"
                       } origin-left`}
                     />
@@ -362,7 +362,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                           <table className="min-w-full border-collapse text-left text-[0.95rem]">
                             <thead className="bg-steel-100">
                               <tr>
-                                <th className="w-[260px] border-b border-r border-steel-300 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.06em] text-steel-700">
+                                <th className="w-65 border-b border-r border-steel-300 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.06em] text-steel-700">
                                   Specification
                                 </th>
                                 <th className="border-b border-steel-300 px-4 py-3 text-xs font-bold uppercase tracking-[0.06em] text-steel-700">
@@ -499,7 +499,7 @@ export default function ProductDetails({ slugAndId = "" }) {
         </section>
       </main>
       {isRequestModalOpen && selectedDocument ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-xl border border-steel-300 bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-lg font-bold text-steel-900">Request Document Via Email</h3>

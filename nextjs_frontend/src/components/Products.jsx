@@ -217,7 +217,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
           </div>
 
           <div className="mt-4 flex h-12 items-center gap-3 rounded-md border border-steel-200 bg-white px-3">
-            <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.1em] text-steel-700">
+            <span className="shrink-0 text-xs font-semibold uppercase tracking-widest text-steel-700">
               Filters
             </span>
             <div className="min-w-0 flex-1 overflow-x-auto">
