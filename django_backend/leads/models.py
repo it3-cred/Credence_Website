@@ -34,3 +34,36 @@ class CatalogueEmailRequest(models.Model):
 
     def __str__(self):
         return f"{self.email} -> {self.catalogue_id}"
+
+
+class InquiryRequest(models.Model):
+    email = models.EmailField()
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    inquiry_reason = models.CharField(max_length=120)
+    preferred_language = models.CharField(max_length=80, blank=True)
+    company_name = models.CharField(max_length=200, blank=True)
+    request_details = models.TextField(
+        blank=True,
+        validators=[MinLengthValidator(10, "Please add at least 10 characters.")],
+    )
+    country = models.CharField(max_length=100, blank=True)
+    business_address = models.CharField(max_length=255, blank=True)
+    phone_number = models.CharField(
+        max_length=40,
+        blank=True,
+        validators=[RegexValidator(r"^[0-9+\-\s()]*$", "Invalid phone number format.")],
+    )
+    state = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    subscribe_updates = models.BooleanField(default=False)
+    request_ip = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "inquiry_requests"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} <{self.email}>"

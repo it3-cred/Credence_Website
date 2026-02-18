@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from products.models import ProductCatalogue
-from .models import CatalogueEmailRequest
+from .models import CatalogueEmailRequest, InquiryRequest
 
 
 def _get_client_ip(request):
@@ -49,6 +49,55 @@ def create_catalogue_email_request(request):
             "status": lead_request.status,
             "created_at": lead_request.created_at,
             "message": "Request submitted. Document email dispatch will be processed later.",
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+def _to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+@api_view(["POST"])
+def create_inquiry_request(request):
+    payload = {
+        "email": (request.data.get("email") or "").strip(),
+        "first_name": (request.data.get("first_name") or "").strip(),
+        "last_name": (request.data.get("last_name") or "").strip(),
+        "inquiry_reason": (request.data.get("inquiry_reason") or "").strip(),
+        "preferred_language": (request.data.get("preferred_language") or "").strip(),
+        "company_name": (request.data.get("company_name") or "").strip(),
+        "request_details": (request.data.get("request_details") or "").strip(),
+        "country": (request.data.get("country") or "").strip(),
+        "business_address": (request.data.get("business_address") or "").strip(),
+        "phone_number": (request.data.get("phone_number") or "").strip(),
+        "state": (request.data.get("state") or "").strip(),
+        "city": (request.data.get("city") or "").strip(),
+        "postal_code": (request.data.get("postal_code") or "").strip(),
+        "subscribe_updates": _to_bool(request.data.get("subscribe_updates")),
+    }
+
+    missing_fields = [key for key in ("email", "first_name", "last_name", "inquiry_reason") if not payload[key]]
+    if missing_fields:
+        return Response(
+            {"detail": f"Missing required fields: {', '.join(missing_fields)}."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    inquiry = InquiryRequest.objects.create(
+        **payload,
+        request_ip=_get_client_ip(request),
+    )
+
+    return Response(
+        {
+            "id": inquiry.id,
+            "message": "Inquiry submitted successfully.",
+            "created_at": inquiry.created_at,
         },
         status=status.HTTP_201_CREATED,
     )

@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
   industries: "/api/industries",
   products: "/api/products",
   catalogueEmailRequest: "/api/leads/catalogue-email-request",
+  requestQuote: "/api/leads/request-quote",
 };
 
 export function apiUrl(path) {

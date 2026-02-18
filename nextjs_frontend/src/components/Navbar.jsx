@@ -301,9 +301,12 @@ export default function Navbar() {
               Login
             </Link>
           )}
-          <button type="button" className="rounded-md cursor-pointer bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-600">
+          <Link
+            href="/request-quote"
+            className="rounded-md cursor-pointer bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+          >
             Request Quote
-          </button>
+          </Link>
         </div>
 
         <div className="flex items-center gap-1 min-[1200px]:hidden">
@@ -428,12 +431,12 @@ export default function Navbar() {
                 Login / Register
               </Link>
             )}
-            <button
-              type="button"
-              className="rounded-md bg-[#FF2300] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#e21f00]"
+            <Link
+              href="/request-quote"
+              className="rounded-md bg-[#FF2300] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-[#e21f00]"
             >
               Request Quote
-            </button>
+            </Link>
           </div>
         </div>
       )}
@@ -469,3 +472,5 @@ export default function Navbar() {
     </header>
   );
 }
+
+
