@@ -68,6 +68,10 @@ class Achievement(models.Model):
 
     class Meta:
         db_table = "achievements"
+        indexes = [
+            models.Index(fields=["created_at"], name="achievement_created_idx"),
+            models.Index(fields=["is_visible", "-created_at"], name="ach_visible_created_idx"),
+        ]
 
 
 class News(models.Model):
@@ -101,6 +105,10 @@ class News(models.Model):
 
     class Meta:
         db_table = "news"
+        indexes = [
+            models.Index(fields=["created_at"], name="news_created_idx"),
+            models.Index(fields=["is_visible", "-created_at"], name="news_visible_created_idx"),
+        ]
 
 
 class NewsImage(models.Model):

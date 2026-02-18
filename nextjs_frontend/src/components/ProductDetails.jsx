@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl, productDetailPath } from "@/lib/api";
@@ -13,6 +14,15 @@ const TABS = {
   features: "features",
   specifications: "specifications",
   documents: "documents",
+};
+
+const DOCUMENT_TYPE_LABEL_MAP = {
+  CATALOGUE: "Brochures",
+  CERTIFICATE: "Certificates & Approvals",
+  DATASHEET: "Data Sheets & Bulletins",
+  DRAWING: "Drawings & Schematics",
+  MANUAL: "Manuals & Guides",
+  OTHER: "Other Documents",
 };
 
 function parseSlugAndId(slugAndId) {
@@ -119,20 +129,15 @@ export default function ProductDetails({ slugAndId = "" }) {
     product?.specification && typeof product.specification === "object" && !Array.isArray(product.specification)
       ? Object.entries(product.specification)
       : [];
-  const documents = Array.isArray(product?.documents) ? product.documents : [];
-  const documentTypeLabelMap = {
-    CATALOGUE: "Brochures",
-    CERTIFICATE: "Certificates & Approvals",
-    DATASHEET: "Data Sheets & Bulletins",
-    DRAWING: "Drawings & Schematics",
-    MANUAL: "Manuals & Guides",
-    OTHER: "Other Documents",
-  };
+  const documents = useMemo(
+    () => (Array.isArray(product?.documents) ? product.documents : []),
+    [product?.documents],
+  );
   const documentTypes = useMemo(() => {
     const unique = [...new Set(documents.map((item) => item.doc_type).filter(Boolean))];
     return unique.map((type) => ({
       value: type,
-      label: documentTypeLabelMap[type] || type,
+      label: DOCUMENT_TYPE_LABEL_MAP[type] || type,
     }));
   }, [documents]);
   const filteredDocuments = useMemo(() => {
@@ -229,10 +234,13 @@ export default function ProductDetails({ slugAndId = "" }) {
             <>
               <div className="grid gap-6 border-y border-steel-300 py-6 lg:grid-cols-2">
                 <div className="px-1">
-                  <div className="h-[22rem] w-full overflow-hidden rounded-lg border border-steel-300 bg-white sm:h-[26rem]">
-                    <img
+                  <div className="relative h-[22rem] w-full overflow-hidden rounded-lg border border-steel-300 bg-white shadow-[0_4px_14px_rgba(23,28,34,0.08)] sm:h-[26rem]">
+                    <Image
                       src={imageUrls[activeImage] || FALLBACK_IMAGE}
                       alt={product.name}
+                      fill
+                      unoptimized
+                      sizes="(min-width: 1024px) 50vw, 100vw"
                       className="h-full w-full object-contain"
                     />
                   </div>
@@ -245,7 +253,14 @@ export default function ProductDetails({ slugAndId = "" }) {
                           onClick={() => setActiveImage(index)}
                           className={`h-14 w-14 shrink-0 overflow-hidden rounded border ${activeImage === index ? "border-brand-500" : "border-steel-400"}`}
                         >
-                          <img src={url} alt={`${product.name}-${index + 1}`} className="h-full w-full object-cover" />
+                          <Image
+                            src={url}
+                            alt={`${product.name}-${index + 1}`}
+                            width={56}
+                            height={56}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
                         </button>
                       ))}
                     </div>
@@ -343,7 +358,7 @@ export default function ProductDetails({ slugAndId = "" }) {
 
                     {activeTab === TABS.specifications ? (
                       specifications.length ? (
-                        <div className="overflow-x-auto rounded-md border border-steel-300 bg-white">
+                        <div className="overflow-x-auto rounded-md border border-steel-300 bg-white shadow-[0_2px_10px_rgba(23,28,34,0.06)]">
                           <table className="min-w-full border-collapse text-left text-[0.95rem]">
                             <thead className="bg-steel-100">
                               <tr>
@@ -402,7 +417,7 @@ export default function ProductDetails({ slugAndId = "" }) {
 
                           <div className="grid gap-3">
                             {filteredDocuments.map((document) => (
-                              <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-steel-300 bg-white px-3 py-3">
+                              <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-steel-300 bg-white px-3 py-3 shadow-[0_2px_10px_rgba(23,28,34,0.06)] transition hover:shadow-[0_8px_20px_rgba(23,28,34,0.12)]">
                                 <div>
                                   <p className="text-base font-bold text-steel-900">{document.title}</p>
                                   <p className="text-sm text-steel-700">
@@ -453,14 +468,16 @@ export default function ProductDetails({ slugAndId = "" }) {
                       <Link
                         key={item.id}
                         href={`/product/${encodeURIComponent(item.slug || "product")}-${encodeURIComponent(item.id)}`}
-                        className="overflow-hidden rounded-xl border border-steel-200 bg-white transition hover:-translate-y-0.5 hover:shadow-sm"
+                        className="overflow-hidden rounded-xl border border-steel-200 bg-white shadow-[0_2px_10px_rgba(23,28,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(23,28,34,0.14)]"
                       >
-                        <div className="h-44 w-full bg-steel-100">
-                          <img
+                        <div className="relative h-44 w-full bg-steel-100">
+                          <Image
                             src={item.image_url || FALLBACK_IMAGE}
                             alt={item.name}
+                            fill
+                            unoptimized
+                            sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
                             className="h-full w-full object-cover"
-                            loading="lazy"
                           />
                         </div>
                         <div className="p-4">

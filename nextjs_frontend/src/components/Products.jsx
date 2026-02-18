@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
@@ -40,10 +40,6 @@ function buildProductsUrl({ powerSource, industries, torqueMin, torqueMax, thrus
 }
 
 export default function ProductsPage({ initialPowerSourceSlug = "" }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const [products, setProducts] = useState([]);
   const [powerSources, setPowerSources] = useState([]);
   const [industries, setIndustries] = useState([]);
@@ -61,19 +57,6 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   useEffect(() => {
     setSelectedPowerSource(initialPowerSourceSlug || "");
   }, [initialPowerSourceSlug]);
-
-  useEffect(() => {
-    const fromQueryIndustries = searchParams.get("industries");
-    const fromQueryTorqueMin = searchParams.get("torque_min");
-    const fromQueryTorqueMax = searchParams.get("torque_max");
-    const fromQueryThrustMin = searchParams.get("thrust_min");
-    const fromQueryThrustMax = searchParams.get("thrust_max");
-    setSelectedIndustries(fromQueryIndustries ? fromQueryIndustries.split(",").filter(Boolean) : []);
-    setTorqueMin(fromQueryTorqueMin || "");
-    setTorqueMax(fromQueryTorqueMax || "");
-    setThrustMin(fromQueryThrustMin || "");
-    setThrustMax(fromQueryThrustMax || "");
-  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
@@ -194,23 +177,8 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
     return chips;
   }, [selectedPowerSourceName, selectedIndustries, industries, torqueMin, torqueMax, thrustMin, thrustMax]);
 
-  const updateUrlQuery = (nextIndustries, nextTorqueMin, nextTorqueMax, nextThrustMin, nextThrustMax) => {
-    const params = new URLSearchParams();
-    if (nextIndustries.length) params.set("industries", nextIndustries.join(","));
-    const normalizedTorque = normalizeTorqueBounds(nextTorqueMin, nextTorqueMax);
-    const normalizedThrust = normalizeTorqueBounds(nextThrustMin, nextThrustMax);
-    if (normalizedTorque.min) params.set("torque_min", normalizedTorque.min);
-    if (normalizedTorque.max) params.set("torque_max", normalizedTorque.max);
-    if (normalizedThrust.min) params.set("thrust_min", normalizedThrust.min);
-    if (normalizedThrust.max) params.set("thrust_max", normalizedThrust.max);
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
-  };
-
   const handlePowerSourceSelect = (slug) => {
-    const targetPath = slug ? `/products/${slug}` : "/products";
-    const params = new URLSearchParams(searchParams.toString());
-    router.push(params.toString() ? `${targetPath}?${params.toString()}` : targetPath);
+    setSelectedPowerSource(slug);
   };
 
   const toggleIndustry = (slug) => {
@@ -218,37 +186,15 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
       ? selectedIndustries.filter((item) => item !== slug)
       : [...selectedIndustries, slug];
     setSelectedIndustries(next);
-    updateUrlQuery(next, torqueMin, torqueMax, thrustMin, thrustMax);
-  };
-
-  const handleTorqueMinChange = (value) => {
-    setTorqueMin(value);
-    updateUrlQuery(selectedIndustries, value, torqueMax, thrustMin, thrustMax);
-  };
-
-  const handleTorqueMaxChange = (value) => {
-    setTorqueMax(value);
-    updateUrlQuery(selectedIndustries, torqueMin, value, thrustMin, thrustMax);
-  };
-
-  const handleThrustMinChange = (value) => {
-    setThrustMin(value);
-    updateUrlQuery(selectedIndustries, torqueMin, torqueMax, value, thrustMax);
-  };
-
-  const handleThrustMaxChange = (value) => {
-    setThrustMax(value);
-    updateUrlQuery(selectedIndustries, torqueMin, torqueMax, thrustMin, value);
   };
 
   const clearFilters = () => {
+    setSelectedPowerSource("");
     setSelectedIndustries([]);
     setTorqueMin("");
     setTorqueMax("");
     setThrustMin("");
     setThrustMax("");
-    updateUrlQuery([], "", "", "", "");
-    router.push("/products");
   };
 
   return (
@@ -259,7 +205,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-steel-200 pb-5">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-700">Product Catalogue</p>
-              <h1 className="mt-1 text-3xl font-bold tracking-tight text-steel-900 sm:text-4xl">Products</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-steel-900 sm:text-4xl">Products</h1>
             </div>
             <button
               type="button"
@@ -270,17 +216,28 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
             </button>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {appliedFilters.map((chip) => (
-              <span key={chip.key} className="rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700">
-                {chip.label}
-              </span>
-            ))}
+          <div className="mt-4 flex h-12 items-center gap-3 rounded-md border border-steel-200 bg-white px-3">
+            <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.1em] text-steel-700">
+              Filters
+            </span>
+            <div className="min-w-0 flex-1 overflow-x-auto">
+              {appliedFilters.length ? (
+                <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                  {appliedFilters.map((chip) => (
+                    <span key={chip.key} className="shrink-0 rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700">
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-steel-500">No active filters</span>
+              )}
+            </div>
             {appliedFilters.length ? (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700 hover:bg-steel-100"
+                className="shrink-0 rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700 hover:bg-steel-100"
               >
                 Clear
               </button>
@@ -288,7 +245,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
           </div>
 
           <div className="mt-6 grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className={`${isFilterOpen ? "block" : "hidden"} rounded-xl border border-steel-200 bg-white p-4 lg:sticky lg:top-24 lg:block lg:h-fit`}>
+            <aside className={`${isFilterOpen ? "block" : "hidden"} rounded-xl border border-steel-200 bg-white p-4 max-lg:max-h-[70vh] max-lg:overflow-y-auto lg:sticky lg:top-24 lg:block lg:h-[calc(100vh-7.5rem)] lg:overflow-y-auto`}>
               <h2 className="text-sm font-semibold text-steel-900">Filters</h2>
 
               <div className="mt-4">
@@ -345,7 +302,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     min="0"
                     step="any"
                     value={torqueMin}
-                    onChange={(event) => handleTorqueMinChange(event.target.value)}
+                    onChange={(event) => setTorqueMin(event.target.value)}
                     placeholder="Min"
                     className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
                   />
@@ -355,7 +312,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     min="0"
                     step="any"
                     value={torqueMax}
-                    onChange={(event) => handleTorqueMaxChange(event.target.value)}
+                    onChange={(event) => setTorqueMax(event.target.value)}
                     placeholder="Max"
                     className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
                   />
@@ -371,7 +328,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     min="0"
                     step="any"
                     value={thrustMin}
-                    onChange={(event) => handleThrustMinChange(event.target.value)}
+                    onChange={(event) => setThrustMin(event.target.value)}
                     placeholder="Min"
                     className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
                   />
@@ -381,7 +338,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     min="0"
                     step="any"
                     value={thrustMax}
-                    onChange={(event) => handleThrustMaxChange(event.target.value)}
+                    onChange={(event) => setThrustMax(event.target.value)}
                     placeholder="Max"
                     className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
                   />
@@ -405,12 +362,14 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     href={`/product/${encodeURIComponent(product.slug || "product")}-${encodeURIComponent(product.id)}`}
                     className="overflow-hidden rounded-xl border border-steel-200 bg-white transition hover:-translate-y-0.5 hover:shadow-sm"
                   >
-                    <div className="h-52 w-full bg-steel-100">
-                      <img
+                    <div className="relative h-52 w-full bg-steel-100">
+                      <Image
                         src={product.image_url || FALLBACK_IMAGE}
                         alt={product.name}
+                        fill
+                        unoptimized
+                        sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
                         className="h-full w-full object-cover"
-                        loading="lazy"
                       />
                     </div>
                     <div className="space-y-2 p-4">

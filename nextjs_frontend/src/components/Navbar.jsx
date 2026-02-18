@@ -121,7 +121,7 @@ export default function Navbar() {
   const latestAnnouncement = announcements[0] || null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-steel-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-steel-200 bg-white backdrop-blur">
       {hasRibbon ? (
         <div className="border-b border-zinc-200 bg-brand-500 text-white">
           <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-2 py-2 sm:px-4 lg:px-6">

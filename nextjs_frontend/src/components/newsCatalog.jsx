@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_BASE_URL, API_ENDPOINTS, apiUrl } from "@/lib/api";
@@ -161,13 +162,15 @@ export default function NewsCatalog() {
                     key={`${item.model}-${item.id}`}
                     className="overflow-hidden rounded-2xl border border-brand-200 bg-white"
                   >
-                    <div className="h-52 w-full bg-steel-100 sm:h-56">
+                    <div className="relative h-52 w-full bg-steel-100 sm:h-56">
                       {coverImage ? (
-                        <img
+                        <Image
                           src={coverImage}
                           alt={item.title}
+                          fill
+                          unoptimized
+                          sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
                           className="h-full w-full object-cover"
-                          loading="lazy"
                         />
                       ) : null}
                     </div>

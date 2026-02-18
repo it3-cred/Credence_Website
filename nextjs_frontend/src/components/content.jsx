@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_BASE_URL, API_ENDPOINTS, apiUrl } from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 
 function normalizeType(type) {
   return type === "achievement" ? "achievement" : "news";
@@ -234,13 +235,19 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
                         style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
                       >
                         {item.image_urls.map((imageUrl, index) => (
-                          <img
+                          <div
                             key={`${item.id}-image-${index}`}
-                            src={imageUrl}
-                            alt={`${item.title} image ${index + 1}`}
-                            className="h-64 w-full shrink-0 object-cover sm:h-80"
-                            loading="lazy"
-                          />
+                            className="relative h-64 w-full shrink-0 sm:h-80"
+                          >
+                            <Image
+                              src={imageUrl}
+                              alt={`${item.title} image ${index + 1}`}
+                              fill
+                              unoptimized
+                              sizes="(min-width: 640px) 80vw, 100vw"
+                              className="object-cover"
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>

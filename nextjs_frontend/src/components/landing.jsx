@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 
 const industries = [
   {
@@ -348,12 +349,14 @@ export default function LandingPage() {
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
                 className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
               >
-                <div className="h-[14rem] w-full bg-steel-100 sm:h-[16rem]">
-                  <img
+                <div className="relative h-[14rem] w-full bg-steel-100 sm:h-[16rem]">
+                  <Image
                     src={source.image_url || "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop"}
                     alt={source.name}
+                    fill
+                    unoptimized
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     className="h-full w-full object-cover"
-                    loading="lazy"
                   />
                 </div>
                 <div className="p-4">

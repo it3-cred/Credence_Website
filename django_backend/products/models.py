@@ -109,6 +109,15 @@ class Product(models.Model):
 
     class Meta:
         db_table = "products"
+        indexes = [
+            models.Index(fields=["is_visible", "power_source"], name="prod_vis_pow_idx"),
+            models.Index(fields=["created_at"], name="prod_created_idx"),
+            models.Index(fields=["is_visible", "-created_at"], name="prod_vis_created_idx"),
+            models.Index(fields=["torque_min_nm"], name="prod_torque_min_idx"),
+            models.Index(fields=["torque_max_nm"], name="prod_torque_max_idx"),
+            models.Index(fields=["thrust_min_n"], name="prod_thrust_min_idx"),
+            models.Index(fields=["thrust_max_n"], name="prod_thrust_max_idx"),
+        ]
 
     def __str__(self):
         return self.name
