@@ -7,51 +7,6 @@ import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 
-const industries = [
-  {
-    id: 1,
-    name: "Oil and Gas Industry",
-    image:
-      "https://www.worldfinance.com/wp-content/uploads/2019/11/Exploration-for-oil-and-gas-is-very-expensive-and-risky.jpg",
-    accent: "text-[#ffb84d]",
-  },
-  {
-    id: 2,
-    name: "Power Generation Industry",
-    image:
-      "https://alfainfraprop.com/wp-content/uploads/2023/03/POWER-GENERATION-IN-INDIA-INDUSTRY-ANALYSIS.jpg",
-    accent: "text-white",
-  },
-  {
-    id: 3,
-    name: "Water and Waste Water Industry",
-    image:
-      "https://static.wixstatic.com/media/2f92f1_8ade180c99ba4466b5b9e47201e38021~mv2.jpg/v1/fill/w_568,h_378,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/2f92f1_8ade180c99ba4466b5b9e47201e38021~mv2.jpg",
-    accent: "text-[#e7ff7c]",
-  },
-  {
-    id: 4,
-    name: "Aerospace Research and Defence",
-    image:
-      "https://timestech.in/wp-content/uploads/2019/09/Aerospace-Defense.jpg",
-    accent: "text-white",
-  },
-  {
-    id: 5,
-    name: "Food Beverage and Pharmaceuticals",
-    image:
-      "https://lh3.googleusercontent.com/proxy/_AbhMIsV3muA1O4U9JP1WFh5WJBkZzCVJzmdYR2HH6HUyFEnKtIWGUloeZhg00ndnNEqZRaM0aTGcntPmkbuFJctnfjyKDaLYXA2jbSszRFxaZDFj6UYeBoZdyHUyudj1Q",
-    accent: "text-[#ffdf9a]",
-  },
-  {
-    id: 6,
-    name: "Metals and Mining",
-    image:
-      "https://www.mining-technology.com/wp-content/uploads/sites/19/2020/10/Feature-Image-top-ten-metals-and-mining-companies.jpg",
-    accent: "text-white",
-  },
-];
-
 const partnerCompanies = [
   "Tata Steel Limited",
   "Reliance Industries Limited",
@@ -86,6 +41,8 @@ export default function LandingPage() {
   const [updatesError, setUpdatesError] = useState("");
   const [powerSources, setPowerSources] = useState([]);
   const [powerSourcesError, setPowerSourcesError] = useState("");
+  const [industriesData, setIndustriesData] = useState([]);
+  const [industriesError, setIndustriesError] = useState("");
 
   const visibleUpdates = useMemo(() => updates.filter((item) => item.is_visible), [updates]);
 
@@ -169,6 +126,45 @@ export default function LandingPage() {
     let isMounted = true;
     const controller = new AbortController();
 
+    async function fetchIndustries() {
+      setIndustriesError("");
+      try {
+        const response = await fetch(apiUrl(API_ENDPOINTS.industries), { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error("Failed to fetch industries.");
+        }
+        const json = await response.json();
+        const rows = Array.isArray(json?.results) ? json.results : [];
+        const mapped = rows.map((item) => ({
+          id: item.id,
+          name: item.name || "",
+          slug: item.slug || "",
+          image: item.image_url || "",
+          accent_color: item.accent_color || "#FFFFFF",
+        }));
+        if (isMounted) {
+          setIndustriesData(mapped);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError" && isMounted) {
+          setIndustriesError("Unable to load industries right now.");
+          setIndustriesData([]);
+        }
+      }
+    }
+
+    fetchIndustries();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     async function fetchPowerSources() {
       setPowerSourcesError("");
       try {
@@ -206,7 +202,11 @@ export default function LandingPage() {
   }, []);
 
   const slides = useMemo(() => chunkItems(visibleUpdates, itemsPerSlide), [visibleUpdates, itemsPerSlide]);
-  const industryTrackItems = useMemo(() => [...industries, ...industries], []);
+  const hasContentUpdates = slides.length > 0;
+  const industryTrackItems = useMemo(
+    () => (industriesData.length ? [...industriesData, ...industriesData] : []),
+    [industriesData],
+  );
   const partnerRows = useMemo(
     () => [
       partnerCompanies.slice(0, 4),
@@ -263,76 +263,72 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section>
-        <div className="bg-[#e7d7b7]">
-          <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
-                Latest News & Achievements
-              </p>
-              <Link
-                href="/news"
-                className="rounded-md  px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-700 hover:text-white"
-              >
-                View All News
-              </Link>
-            </div>
+      {!updatesLoading && hasContentUpdates ? (
+        <section>
+          <div className="bg-[#e7d7b7]">
+            <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
+                  Latest News & Achievements
+                </p>
+                <Link
+                  href="/news"
+                  className="rounded-md  px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-700 hover:text-white"
+                >
+                  View All News
+                </Link>
+              </div>
 
-            {updatesError ? (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{updatesError}</p>
-            ) : null}
+              {updatesError ? (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{updatesError}</p>
+              ) : null}
 
-            {!updatesLoading && slides.length === 0 && !updatesError ? (
-              <p className="rounded-md bg-white/70 px-3 py-2 text-sm font-medium text-steel-800">
-                No visible news or achievements found.
-              </p>
-            ) : null}
-
-            <div
-              className="overflow-hidden"
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
-              onTouchStart={() => setIsPaused(true)}
-              onTouchEnd={() => setIsPaused(false)}
-              onTouchCancel={() => setIsPaused(false)}
-              onFocus={() => setIsPaused(true)}
-              onBlur={() => setIsPaused(false)}
-            >
               <div
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${slideIndex * 100}%)` }}
+                className="overflow-hidden"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                onTouchStart={() => setIsPaused(true)}
+                onTouchEnd={() => setIsPaused(false)}
+                onTouchCancel={() => setIsPaused(false)}
+                onFocus={() => setIsPaused(true)}
+                onBlur={() => setIsPaused(false)}
               >
-                {slides.map((slide, idx) => (
-                  <div key={idx} className="grid w-full shrink-0 gap-2 sm:gap-3 md:grid-cols-3">
-                    {slide.map((item) => (
-                      <article
-                        key={`${item.model}-${item.id}`}
-                        className="news-card flex min-h-50 flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-52.5 sm:p-2"
-                      >
-                        <p className="news-title-clamp text-[11px] font-medium text-brand-700 sm:text-xs">
-                          {item.category}
-                        </p>
-                        <h2 className="news-summary-clamp mt-1.5 text-[1.15rem] font-bold leading-[1.08] tracking-tight text-steel-900 sm:text-[1.3rem]">
-                          {item.title}
-                        </h2>
-                        <p className="news-content-clamp mt-2 text-[11px] leading-snug text-steel-800 sm:text-xs">
-                          {item.summary}
-                        </p>
-                        <Link
-                          href={`/${encodeURIComponent(item.model)}/${encodeURIComponent(item.slug || "item")}-${encodeURIComponent(item.id)}`}
-                          className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
+                <div
+                  className="flex transition-transform duration-700 ease-in-out"
+                  style={{ transform: `translateX(-${slideIndex * 100}%)` }}
+                >
+                  {slides.map((slide, idx) => (
+                    <div key={idx} className="grid w-full shrink-0 gap-2 sm:gap-3 md:grid-cols-3">
+                      {slide.map((item) => (
+                        <article
+                          key={`${item.model}-${item.id}`}
+                          className="news-card flex min-h-50 flex-col rounded-sm border border-[#e7d7b7]! bg-[#e7d7b7] p-3 sm:min-h-52.5 sm:p-2"
                         >
-                          Read More -{">"}
-                        </Link>
-                      </article>
-                    ))}
-                  </div>
-                ))}
+                          <p className="news-title-clamp text-[11px] font-medium text-brand-700 sm:text-xs">
+                            {item.category}
+                          </p>
+                          <h2 className="news-summary-clamp mt-1.5 text-[1.15rem] font-bold leading-[1.08] tracking-tight text-steel-900 sm:text-[1.3rem]">
+                            {item.title}
+                          </h2>
+                          <p className="news-content-clamp mt-2 text-[11px] leading-snug text-steel-800 sm:text-xs">
+                            {item.summary}
+                          </p>
+                          <Link
+                            href={`/${encodeURIComponent(item.model)}/${encodeURIComponent(item.slug || "item")}-${encodeURIComponent(item.id)}`}
+                            className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
+                          >
+                            Read More -{">"}
+                          </Link>
+                        </article>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="bg-steel-100">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-10">
@@ -386,6 +382,9 @@ export default function LandingPage() {
             <br />
             <span className="text-brand-500">Serve!</span>
           </h2>
+          {industriesError ? (
+            <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{industriesError}</p>
+          ) : null}
 
           <div
             className="mt-5 overflow-hidden"
@@ -401,24 +400,26 @@ export default function LandingPage() {
               className="industry-marquee-track flex w-max gap-3 sm:gap-4"
               style={{ animationPlayState: isIndustryPaused ? "paused" : "running" }}
             >
-              {industryTrackItems.map((industry, index) => (
-                <article
-                  key={`${industry.id}-${index}`}
-                  className="relative w-[78vw] max-w-70 shrink-0 overflow-hidden rounded-xl border border-brand-200"
-                >
-                  <div
-                    className="h-32 bg-cover bg-center sm:h-36"
-                    style={{
-                      backgroundImage: `linear-gradient(0deg, rgba(20,26,34,0.58), rgba(20,26,34,0.18)), url('${industry.image}')`,
-                    }}
-                  />
-                  <h3
-                    className={`absolute left-3 top-1/2 max-w-[86%] -translate-y-1/2 text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-[0.95] tracking-tight ${industry.accent}`}
+                {industryTrackItems.map((industry, index) => (
+                  <Link
+                    key={`${industry.id}-${index}`}
+                    href={industry.slug ? `/products?industries=${encodeURIComponent(industry.slug)}` : "/products"}
+                    className="relative block w-[78vw] max-w-70 shrink-0 overflow-hidden rounded-xl border border-brand-200"
                   >
-                    {industry.name}
-                  </h3>
-                </article>
-              ))}
+                    <div
+                      className="h-32 bg-cover bg-center sm:h-36"
+                      style={{
+                        backgroundImage: `linear-gradient(0deg, rgba(20,26,34,0.58), rgba(20,26,34,0.18)), url('${industry.image}')`,
+                      }}
+                    />
+                    <h3
+                      className="absolute left-3 top-1/2 max-w-[86%] -translate-y-1/2 text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-[0.95] tracking-tight"
+                      style={{ color: industry.accent_color }}
+                    >
+                      {industry.name}
+                    </h3>
+                  </Link>
+                ))}
             </div>
           </div>
         </div>

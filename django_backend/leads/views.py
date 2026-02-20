@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email as django_validate_email
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -14,16 +17,42 @@ def _get_client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
+def _validate_email_address(raw_email):
+    normalized = str(raw_email or "").strip().lower()
+    if not normalized:
+        return None, "email is required."
+
+    try:
+        django_validate_email(normalized)
+    except ValidationError:
+        return None, "Enter a valid email address."
+
+    try:
+        from email_validator import EmailNotValidError, validate_email as lib_validate_email
+    except Exception:
+        return normalized, None
+
+    try:
+        result = lib_validate_email(
+            normalized,
+            check_deliverability=bool(getattr(settings, "EMAIL_VALIDATION_CHECK_DELIVERABILITY", True)),
+        )
+    except EmailNotValidError as exc:
+        return None, str(exc)
+
+    return result.normalized, None
+
+
 @api_view(["POST"])
 def create_catalogue_email_request(request):
     catalogue_id = request.data.get("catalogue_id")
-    email = (request.data.get("email") or "").strip()
+    email, email_error = _validate_email_address(request.data.get("email"))
     company_name = (request.data.get("company_name") or "").strip()
 
     if not catalogue_id:
         return Response({"detail": "catalogue_id is required."}, status=status.HTTP_400_BAD_REQUEST)
-    if not email:
-        return Response({"detail": "email is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if email_error:
+        return Response({"detail": email_error}, status=status.HTTP_400_BAD_REQUEST)
 
     catalogue = get_object_or_404(ProductCatalogue.objects.filter(is_visible=True), id=catalogue_id)
     if catalogue.access_type != ProductCatalogue.ACCESS_EMAIL_VALIDATED:
@@ -64,8 +93,9 @@ def _to_bool(value):
 
 @api_view(["POST"])
 def create_inquiry_request(request):
+    email, email_error = _validate_email_address(request.data.get("email"))
     payload = {
-        "email": (request.data.get("email") or "").strip(),
+        "email": email or "",
         "first_name": (request.data.get("first_name") or "").strip(),
         "last_name": (request.data.get("last_name") or "").strip(),
         "inquiry_reason": (request.data.get("inquiry_reason") or "").strip(),
@@ -81,6 +111,8 @@ def create_inquiry_request(request):
         "subscribe_updates": _to_bool(request.data.get("subscribe_updates")),
     }
 
+    if email_error:
+        return Response({"detail": email_error}, status=status.HTTP_400_BAD_REQUEST)
     missing_fields = [key for key in ("email", "first_name", "last_name", "inquiry_reason") if not payload[key]]
     if missing_fields:
         return Response(

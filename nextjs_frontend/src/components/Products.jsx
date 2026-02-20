@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -40,6 +41,7 @@ function buildProductsUrl({ powerSource, industries, torqueMin, torqueMax, thrus
 }
 
 export default function ProductsPage({ initialPowerSourceSlug = "" }) {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState([]);
   const [powerSources, setPowerSources] = useState([]);
   const [industries, setIndustries] = useState([]);
@@ -57,6 +59,14 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   useEffect(() => {
     setSelectedPowerSource(initialPowerSourceSlug || "");
   }, [initialPowerSourceSlug]);
+
+  useEffect(() => {
+    const queryIndustries = (searchParams.get("industries") || "")
+      .split(",")
+      .map((slug) => slug.trim())
+      .filter(Boolean);
+    setSelectedIndustries(queryIndustries);
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;

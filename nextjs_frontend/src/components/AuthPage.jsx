@@ -34,6 +34,11 @@ function parseBackendError(payload, fallbackMessage) {
   return payload.error.message || fallbackMessage;
 }
 
+function isLikelyEmail(value) {
+  const normalized = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+}
+
 async function apiPost(path, body) {
   const response = await fetch(`${getApiBase()}${path}`, {
     method: "POST",
@@ -137,6 +142,10 @@ export default function AuthPage() {
       setLoginAlert({ type: "error", message: "Email is required." });
       return;
     }
+    if (!isLikelyEmail(loginForm.email)) {
+      setLoginAlert({ type: "error", message: "Enter a valid email address." });
+      return;
+    }
     if (loginMethod === "password" && !loginForm.password) {
       setLoginAlert({ type: "error", message: "Password is required." });
       return;
@@ -170,6 +179,10 @@ export default function AuthPage() {
 
     if (!signupForm.name || !signupForm.email || !signupForm.company_name) {
       setSignupAlert({ type: "error", message: "Name, email, and company name are required." });
+      return;
+    }
+    if (!isLikelyEmail(signupForm.email)) {
+      setSignupAlert({ type: "error", message: "Enter a valid email address." });
       return;
     }
 
@@ -226,6 +239,10 @@ export default function AuthPage() {
         setLoginAlert({ type: "error", message: "Enter email before requesting OTP." });
         return;
       }
+      if (!isLikelyEmail(loginForm.email)) {
+        setLoginAlert({ type: "error", message: "Enter a valid email address before requesting OTP." });
+        return;
+      }
       setIsSendingLoginOtp(true);
       try {
         const result = await apiPost("/api/auth/otp/send", { email: loginForm.email, purpose: "LOGIN" });
@@ -242,6 +259,10 @@ export default function AuthPage() {
     setSignupAlert({ type: "", message: "" });
     if (!signupForm.email) {
       setSignupAlert({ type: "error", message: "Enter email before requesting OTP." });
+      return;
+    }
+    if (!isLikelyEmail(signupForm.email)) {
+      setSignupAlert({ type: "error", message: "Enter a valid email address before requesting OTP." });
       return;
     }
     setIsSendingSignupOtp(true);

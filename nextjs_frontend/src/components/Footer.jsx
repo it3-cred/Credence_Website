@@ -23,7 +23,7 @@ const siteLinks = [
 export default function Footer() {
   return (
     <footer className="mt-16">
-      <div className="bg-linear-to-br from-brand-100 via-brand-200 to-white text-steel-900">
+      <div className="bg-steel-200 to-white text-steel-900">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[1fr_1.7fr]">
             <section className="border-b border-[#ff2301]! pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
@@ -176,7 +176,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="bg-steel-400">
+      <div className="bg-steel-300">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 text-xs text-black sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <p>
             Copyright (c) 2026 Credence Automation Control Systems Private

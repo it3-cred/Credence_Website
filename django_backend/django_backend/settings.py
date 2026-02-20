@@ -34,17 +34,27 @@ SECRET_KEY = "django-insecure-dnr8m2hgispo6542_nd^y5207mz&=qxjb8***mr=q#p(8#q2b=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://192.168.1.48:3000",
-]
+# In local development, allow access from devices on the same LAN.
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
 
-# Allow frontend dev servers on local LAN (e.g., 192.168.1.x:3000)
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+)
+
+# Allow frontend dev servers on common private LAN ranges (port 3000).
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^http://192\.168\.1\.\d{1,3}:3000$",
+    r"^http://localhost:3000$",
+    r"^http://127\.0\.0\.1:3000$",
+    r"^http://192\.168\.\d{1,3}\.\d{1,3}:3000$",
+    r"^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$",
+    r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:3000$",
 ]
 # Only needed if you use SessionAuth from Next.js with cookies:
 CORS_ALLOW_CREDENTIALS = True
@@ -197,3 +207,9 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_VALIDATION_CHECK_DELIVERABILITY = env.bool("EMAIL_VALIDATION_CHECK_DELIVERABILITY", default=True)
+
+# GeoIP2 local DB (for IP-based login location enrichment)
+# Example: D:/path/to/GeoLite2-City.mmdb
+GEOIP2_CITY_DB = env("GEOIP2_CITY_DB", default="")
+

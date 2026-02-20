@@ -1,10 +1,11 @@
 import ipaddress
-import os
 import random
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email as django_validate_email
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
@@ -31,6 +32,35 @@ def _success_response(data=None, http_status=status.HTTP_200_OK):
     return Response({"ok": True, "data": data or {}}, status=http_status)
 
 
+def _validate_email_address(raw_email):
+    normalized = str(raw_email or "").strip().lower()
+    if not normalized:
+        return None, "Email is required."
+
+    # Baseline validation from Django (syntax and normalization safety).
+    try:
+        django_validate_email(normalized)
+    except ValidationError:
+        return None, "Enter a valid email address."
+
+    # Stronger validation using email-validator if installed.
+    try:
+        from email_validator import EmailNotValidError, validate_email as lib_validate_email
+    except Exception:
+        return normalized, None
+
+    try:
+        result = lib_validate_email(
+            normalized,
+            # Keeps behavior configurable for local/dev environments.
+            check_deliverability=bool(getattr(settings, "EMAIL_VALIDATION_CHECK_DELIVERABILITY", True)),
+        )
+    except EmailNotValidError as exc:
+        return None, str(exc)
+
+    return result.normalized, None
+
+
 def _get_session_user(request):
     user_id = request.session.get("account_user_id")
     if not user_id:
@@ -45,31 +75,38 @@ def _get_client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
-def _resolve_location_with_ipinfo(ip_value):
-    token = os.getenv("IPINFO_TOKEN")
-    if not token:
+def _resolve_location_with_geoip2(ip_value):
+    db_path = getattr(settings, "GEOIP2_CITY_DB", "")
+    if not db_path:
         return None
 
     try:
-        import ipinfo
+        import geoip2.database
+        import geoip2.errors
     except Exception:
         return None
 
     try:
-        handler = ipinfo.getHandler(token)
-        details = handler.getDetails(ip_value)
+        with geoip2.database.Reader(db_path) as reader:
+            try:
+                details = reader.city(ip_value)
+            except geoip2.errors.AddressNotFoundError:
+                return None
     except Exception:
         return None
 
-    nation = getattr(details, "country", None)
-    state = getattr(details, "region", None)
+    nation = getattr(details.country, "iso_code", None) or getattr(details.country, "name", None)
+    state = (
+        getattr(details.subdivisions.most_specific, "name", None)
+        or getattr(details.city, "name", None)
+    )
     if not nation and not state:
         return None
 
     return {
         "nation": nation,
         "state": state,
-        "source": "ipinfo",
+        "source": "geoip2",
     }
 
 
@@ -87,9 +124,9 @@ def _derive_location_from_ip(ip_value, request_headers):
     if ip_obj.is_private:
         return {"nation": "PRIVATE_NETWORK", "state": "PRIVATE_NETWORK", "source": "private"}
 
-    ipinfo_location = _resolve_location_with_ipinfo(ip_value)
-    if ipinfo_location:
-        return ipinfo_location
+    geoip2_location = _resolve_location_with_geoip2(ip_value)
+    if geoip2_location:
+        return geoip2_location
 
     country_code = (
         request_headers.get("HTTP_CF_IPCOUNTRY")
@@ -155,7 +192,7 @@ def _consume_otp(email, purpose, otp):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def send_otp(request):
-    email = str(request.data.get("email", "")).strip().lower()
+    email, email_error = _validate_email_address(request.data.get("email", ""))
     purpose = str(request.data.get("purpose", "")).strip().upper()
 
     if purpose not in [EmailOTP.PURPOSE_SIGNUP, EmailOTP.PURPOSE_LOGIN]:
@@ -166,11 +203,11 @@ def send_otp(request):
             http_status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if not email:
+    if email_error:
         return _error_response(
             code="VALIDATION_ERROR",
-            message="Email is required.",
-            errors={"email": ["Email is required."]},
+            message=email_error,
+            errors={"email": [email_error]},
             http_status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -247,7 +284,7 @@ def me(request):
 @permission_classes([AllowAny])
 def signup(request):
     name = str(request.data.get("name", "")).strip()
-    email = str(request.data.get("email", "")).strip().lower()
+    email, email_error = _validate_email_address(request.data.get("email", ""))
     company_name = str(request.data.get("company_name", "")).strip()
     password = str(request.data.get("password", ""))
     otp = str(request.data.get("otp", "")).strip()
@@ -255,8 +292,8 @@ def signup(request):
     field_errors = {}
     if not name:
         field_errors["name"] = ["Name is required."]
-    if not email:
-        field_errors["email"] = ["Email is required."]
+    if email_error:
+        field_errors["email"] = [email_error]
     if not company_name:
         field_errors["company_name"] = ["Company name is required."]
 
@@ -291,11 +328,16 @@ def signup(request):
                 http_status=status.HTTP_400_BAD_REQUEST,
             )
 
+    signup_ip = _get_client_ip(request)
+    signup_location = _derive_location_from_ip(signup_ip, request.META)
+
     with transaction.atomic():
         user = User(
             name=name,
             email=email,
             company_name=company_name,
+            last_login_at=timezone.now(),
+            last_login_location=signup_location,
             is_active=True,
         )
         if password:
@@ -311,6 +353,8 @@ def signup(request):
                 "name": user.name,
                 "email": user.email,
                 "company_name": user.company_name,
+                "last_login_at": user.last_login_at,
+                "last_login_location": user.last_login_location,
             }
         },
         http_status=status.HTTP_201_CREATED,
@@ -321,15 +365,15 @@ def signup(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def login(request):
-    email = str(request.data.get("email", "")).strip().lower()
+    email, email_error = _validate_email_address(request.data.get("email", ""))
     password = str(request.data.get("password", ""))
     otp = str(request.data.get("otp", "")).strip()
 
-    if not email:
+    if email_error:
         return _error_response(
             code="VALIDATION_ERROR",
-            message="Email is required.",
-            errors={"email": ["Email is required."]},
+            message=email_error,
+            errors={"email": [email_error]},
             http_status=status.HTTP_400_BAD_REQUEST,
         )
     if not password and not otp:

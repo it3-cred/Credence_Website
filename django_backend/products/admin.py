@@ -22,9 +22,9 @@ class PowerSourceAdmin(admin.ModelAdmin):
 
 @admin.register(Industry)
 class IndustryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "slug", "sort_order", "is_visible")
+    list_display = ("id", "name", "slug", "sort_order", "accent_color", "is_visible")
     list_filter = ("is_visible",)
-    search_fields = ("name", "slug")
+    search_fields = ("name", "slug", "accent_color")
     prepopulated_fields = {"slug": ("name",)}
 
 
