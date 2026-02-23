@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Bebas_Neue, Montserrat } from "next/font/google";
+import AnalyticsDebugPanel from "@/components/AnalyticsDebugPanel";
+import ConsentBanner from "@/components/ConsentBanner";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -23,6 +25,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${montserrat.variable} ${bebasNeue.variable}`}>
         {children}
+        <ConsentBanner />
+        <AnalyticsDebugPanel />
       </body>
     </html>
   );

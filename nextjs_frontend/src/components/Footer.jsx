@@ -14,10 +14,10 @@ const productLinks = [
 const siteLinks = [
   { site: "Home", href: "#" },
   { site: "About Us", href: "#" },
-  { site: "Products", href: "#" },
-  { site: "Documentations", href: "#" },
+  { site: "Products", href: "/products" },
+  { site: "Distributors", href: "/distributors" },
   { site: "Carrers", href: "/careers" },
-  { site: "Contact Us", href: "#" },
+  { site: "News", href: "/news" },
 ];
 
 export default function Footer() {
@@ -161,12 +161,9 @@ export default function Footer() {
                 <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   {siteLinks.map((link) => (
                     <li key={link.site}>
-                      <a
-                        href={link.href}
-                        className="text-steel-900 transition hover:text-brand-700"
-                      >
-                        {link.site}
-                      </a>
+                      <Link href={link.href} className="text-steel-900 transition hover:text-brand-700">
+                        <p>{link.site}</p>
+                      </Link>
                     </li>
                   ))}
                 </ul>

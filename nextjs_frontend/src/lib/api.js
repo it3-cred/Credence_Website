@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   products: "/api/products",
   catalogueEmailRequest: "/api/leads/catalogue-email-request",
   requestQuote: "/api/leads/request-quote",
+  analyticsEvents: "/api/analytics/events",
 };
 
 export function apiUrl(path) {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop";
@@ -55,6 +56,8 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const [thrustMin, setThrustMin] = useState("");
   const [thrustMax, setThrustMax] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterTrackTimeoutRef = useRef(null);
+  const lastFilterTrackRef = useRef("");
 
   useEffect(() => {
     setSelectedPowerSource(initialPowerSourceSlug || "");
@@ -186,6 +189,48 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
     }
     return chips;
   }, [selectedPowerSourceName, selectedIndustries, industries, torqueMin, torqueMax, thrustMin, thrustMax]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const normalizedTorque = normalizeTorqueBounds(torqueMin, torqueMax);
+    const normalizedThrust = normalizeTorqueBounds(thrustMin, thrustMax);
+    const payload = {
+      page: "products",
+      power_source_slug: selectedPowerSource || null,
+      industries: selectedIndustries,
+      torque_min: normalizedTorque.min ? Number(normalizedTorque.min) : null,
+      torque_max: normalizedTorque.max ? Number(normalizedTorque.max) : null,
+      thrust_min: normalizedThrust.min ? Number(normalizedThrust.min) : null,
+      thrust_max: normalizedThrust.max ? Number(normalizedThrust.max) : null,
+      results_count: products.length,
+    };
+    const signature = JSON.stringify(payload);
+    if (signature === lastFilterTrackRef.current) return;
+
+    if (filterTrackTimeoutRef.current) {
+      window.clearTimeout(filterTrackTimeoutRef.current);
+    }
+    filterTrackTimeoutRef.current = window.setTimeout(() => {
+      trackEvent("product_filters_applied", payload);
+      lastFilterTrackRef.current = signature;
+    }, 600);
+
+    return () => {
+      if (filterTrackTimeoutRef.current) {
+        window.clearTimeout(filterTrackTimeoutRef.current);
+        filterTrackTimeoutRef.current = null;
+      }
+    };
+  }, [
+    isLoading,
+    selectedPowerSource,
+    selectedIndustries,
+    torqueMin,
+    torqueMax,
+    thrustMin,
+    thrustMax,
+    products.length,
+  ]);
 
   const handlePowerSourceSelect = (slug) => {
     setSelectedPowerSource(slug);
@@ -366,10 +411,20 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
               ) : null}
 
               <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <Link
                     key={product.id}
                     href={`/product/${encodeURIComponent(product.slug || "product")}-${encodeURIComponent(product.id)}`}
+                    onClick={() =>
+                      trackEvent("product_click", {
+                        product_id: product.id,
+                        product_slug: product.slug || "",
+                        product_name: product.name || "",
+                        power_source_slug: product.power_source?.slug || null,
+                        source_section: "products_grid",
+                        position: index + 1,
+                      })
+                    }
                     className="overflow-hidden rounded-xl border border-steel-200 bg-white transition hover:-translate-y-0.5 hover:shadow-sm"
                   >
                     <div className="relative h-52 w-full bg-steel-100">

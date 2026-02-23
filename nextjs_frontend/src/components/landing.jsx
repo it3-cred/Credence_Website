@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -20,11 +21,6 @@ const partnerCompanies = [
   "Hindustan Petroleum Corp. Ltd.",
   "Indian Oil Corporation Limited",
   "VSSC Limited",
-];
-
-const partnerCardBackgrounds = [
-  
-  
 ];
 
 function chunkItems(items, size) {
@@ -343,6 +339,14 @@ export default function LandingPage() {
               <Link
                 key={source.id}
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
+                onClick={() =>
+                  trackEvent("power_source_card_click", {
+                    source_section: "landing_product_portfolio",
+                    power_source_id: source.id,
+                    power_source_slug: source.slug || "",
+                    power_source_name: source.name || "",
+                  })
+                }
                 className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
               >
                 <div className="relative h-56 w-full bg-steel-100 sm:h-64">

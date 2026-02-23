@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 
     # apps
     "accounts",
+    "analytics",
     "common",
     "content",
     "leads",

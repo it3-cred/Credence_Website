@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 
 const navItems = [
   { label: "Products", href: "/products" },
@@ -116,6 +117,25 @@ export default function Navbar() {
     window.dispatchEvent(new Event("auth-changed"));
   };
 
+  const handleNavClick = (item) => {
+    if (item?.label === "Products") {
+      trackEvent("nav_click", {
+        label: "Products",
+        source: "navbar",
+        target_path: item.href || "/products",
+      });
+    }
+  };
+
+  const handleRequestQuoteClick = () => {
+    trackEvent("request_quote_click", {
+      source_section: "navbar",
+      page_context: "global",
+      product_id: null,
+      product_slug: null,
+    });
+  };
+
   const hasRibbon = !isRibbonClosed && announcements.length > 0;
   const hasMultipleAnnouncements = announcements.length > 1;
   const latestAnnouncement = announcements[0] || null;
@@ -204,6 +224,7 @@ export default function Navbar() {
               {item.href.startsWith("/") ? (
                 <Link
                   href={item.href}
+                  onClick={() => handleNavClick(item)}
                   className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
                 >
                   {item.label}
@@ -211,6 +232,7 @@ export default function Navbar() {
               ) : (
                 <a
                   href={item.href}
+                  onClick={() => handleNavClick(item)}
                   className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
                 >
                   {item.label}
@@ -303,6 +325,7 @@ export default function Navbar() {
           )}
           <Link
             href="/request-quote"
+            onClick={handleRequestQuoteClick}
             className="rounded-md cursor-pointer bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
           >
             Request Quote
@@ -391,6 +414,7 @@ export default function Navbar() {
                 {item.href.startsWith("/") ? (
                   <Link
                     href={item.href}
+                    onClick={() => handleNavClick(item)}
                     className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
                   >
                     {item.label}
@@ -398,6 +422,7 @@ export default function Navbar() {
                 ) : (
                   <a
                     href={item.href}
+                    onClick={() => handleNavClick(item)}
                     className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
                   >
                     {item.label}
@@ -433,6 +458,7 @@ export default function Navbar() {
             )}
             <Link
               href="/request-quote"
+              onClick={handleRequestQuoteClick}
               className="rounded-md bg-[#FF2300] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-[#e21f00]"
             >
               Request Quote
@@ -472,5 +498,4 @@ export default function Navbar() {
     </header>
   );
 }
-
 

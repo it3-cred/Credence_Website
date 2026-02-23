@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl, productDetailPath } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop";
@@ -50,6 +51,10 @@ export default function ProductDetails({ slugAndId = "" }) {
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [requestError, setRequestError] = useState("");
+  const trackedViewRef = useRef("");
+  const activeSecondsRef = useRef(0);
+  const activeStartedAtRef = useRef(null);
+  const maxScrollPercentRef = useRef(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -150,6 +155,14 @@ export default function ProductDetails({ slugAndId = "" }) {
   const showPerformanceSection = hasTorqueRange || hasThrustRange;
 
   const openRequestModal = (document) => {
+    trackEvent("document_email_request_open", {
+      product_id: product?.id ?? null,
+      product_slug: product?.slug || "",
+      catalogue_id: document?.id ?? null,
+      document_title: document?.title || "",
+      doc_type: document?.doc_type || "",
+      access_type: document?.access_type || "",
+    });
     setSelectedDocument(document);
     setRequestEmail("");
     setRequestCompany("");
@@ -190,10 +203,25 @@ export default function ProductDetails({ slugAndId = "" }) {
       }
 
       setRequestMessage(payload?.message || "Request submitted successfully.");
+      trackEvent("document_email_request_submit", {
+        product_id: product?.id ?? null,
+        product_slug: product?.slug || "",
+        catalogue_id: selectedDocument?.id ?? null,
+        document_title: selectedDocument?.title || "",
+        doc_type: selectedDocument?.doc_type || "",
+        access_type: selectedDocument?.access_type || "",
+        has_company_name: Boolean(requestCompany.trim()),
+      });
       setTimeout(() => {
         closeRequestModal();
       }, 900);
     } catch (submitError) {
+      trackEvent("document_email_request_submit_failed", {
+        product_id: product?.id ?? null,
+        product_slug: product?.slug || "",
+        catalogue_id: selectedDocument?.id ?? null,
+        error_type: "request_submit_failed",
+      });
       setRequestError(submitError.message || "Failed to submit request.");
     } finally {
       setRequestSubmitting(false);
@@ -209,6 +237,93 @@ export default function ProductDetails({ slugAndId = "" }) {
       setActiveDocumentType(documentTypes[0].value);
     }
   }, [documentTypes, activeDocumentType]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    const signature = `${product.id}:${product.slug || ""}`;
+    if (trackedViewRef.current === signature) return;
+    trackEvent("product_detail_view", {
+      product_id: product.id,
+      product_slug: product.slug || "",
+      product_name: product.name || "",
+      power_source_slug: product.power_source?.slug || null,
+      industry_slugs: Array.isArray(product.industries) ? product.industries.map((item) => item.slug).filter(Boolean) : [],
+    });
+    trackedViewRef.current = signature;
+  }, [product]);
+
+  useEffect(() => {
+    if (!product?.id) return undefined;
+
+    activeSecondsRef.current = 0;
+    activeStartedAtRef.current = document.visibilityState === "visible" ? Date.now() : null;
+    maxScrollPercentRef.current = 0;
+
+    const updateScroll = () => {
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop || 0;
+      const maxScrollable = Math.max(doc.scrollHeight - window.innerHeight, 0);
+      const percent = maxScrollable > 0 ? Math.round((scrollTop / maxScrollable) * 100) : 0;
+      if (percent > maxScrollPercentRef.current) {
+        maxScrollPercentRef.current = Math.min(percent, 100);
+      }
+    };
+
+    const pauseTimer = () => {
+      if (activeStartedAtRef.current) {
+        activeSecondsRef.current += (Date.now() - activeStartedAtRef.current) / 1000;
+        activeStartedAtRef.current = null;
+      }
+    };
+
+    const resumeTimer = () => {
+      if (!activeStartedAtRef.current && document.visibilityState === "visible" && document.hasFocus()) {
+        activeStartedAtRef.current = Date.now();
+      }
+    };
+
+    const flushEngagement = () => {
+      pauseTimer();
+      const activeSeconds = Math.round(activeSecondsRef.current);
+      if (activeSeconds <= 0) return;
+      trackEvent("page_engagement", {
+        page_type: "product_detail",
+        product_id: product.id,
+        product_slug: product.slug || "",
+        active_seconds: activeSeconds,
+        max_scroll_percent: maxScrollPercentRef.current,
+      });
+      activeSecondsRef.current = 0;
+      resumeTimer();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushEngagement();
+      } else {
+        resumeTimer();
+      }
+    };
+
+    const onBlur = () => pauseTimer();
+    const onFocus = () => resumeTimer();
+
+    updateScroll();
+    window.addEventListener("scroll", updateScroll, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", flushEngagement);
+
+    return () => {
+      flushEngagement();
+      window.removeEventListener("scroll", updateScroll);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", flushEngagement);
+    };
+  }, [product?.id, product?.slug]);
 
   return (
     <>
@@ -298,7 +413,16 @@ export default function ProductDetails({ slugAndId = "" }) {
                 <div className="flex flex-wrap border-b border-steel-300 bg-white">
                   <button
                     type="button"
-                    onClick={() => setActiveTab(TABS.features)}
+                    onClick={() => {
+                      setActiveTab(TABS.features);
+                      if (product?.id) {
+                        trackEvent("product_detail_tab_click", {
+                          product_id: product.id,
+                          product_slug: product.slug || "",
+                          tab: "features",
+                        });
+                      }
+                    }}
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.features ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -312,7 +436,16 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveTab(TABS.specifications)}
+                    onClick={() => {
+                      setActiveTab(TABS.specifications);
+                      if (product?.id) {
+                        trackEvent("product_detail_tab_click", {
+                          product_id: product.id,
+                          product_slug: product.slug || "",
+                          tab: "specifications",
+                        });
+                      }
+                    }}
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.specifications ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -326,7 +459,16 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveTab(TABS.documents)}
+                    onClick={() => {
+                      setActiveTab(TABS.documents);
+                      if (product?.id) {
+                        trackEvent("product_detail_tab_click", {
+                          product_id: product.id,
+                          product_slug: product.slug || "",
+                          tab: "documents",
+                        });
+                      }
+                    }}
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.documents ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -437,6 +579,17 @@ export default function ProductDetails({ slugAndId = "" }) {
                                     href={document.file_url}
                                     target="_blank"
                                     rel="noreferrer"
+                                    onClick={() =>
+                                      trackEvent("document_download_click", {
+                                        product_id: product?.id ?? null,
+                                        product_slug: product?.slug || "",
+                                        catalogue_id: document.id,
+                                        document_title: document.title || "",
+                                        doc_type: document.doc_type || "",
+                                        access_type: "DIRECT",
+                                        document_tab_category: document.doc_type || "",
+                                      })
+                                    }
                                     className="rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-500 hover:text-white"
                                   >
                                     Download
@@ -464,10 +617,20 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </p>
 
                   <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {similarProducts.map((item) => (
+                    {similarProducts.map((item, index) => (
                       <Link
                         key={item.id}
                         href={`/product/${encodeURIComponent(item.slug || "product")}-${encodeURIComponent(item.id)}`}
+                        onClick={() =>
+                          trackEvent("product_click", {
+                            product_id: item.id,
+                            product_slug: item.slug || "",
+                            product_name: item.name || "",
+                            power_source_slug: item.power_source?.slug || null,
+                            source_section: "similar_products",
+                            position: index + 1,
+                          })
+                        }
                         className="overflow-hidden rounded-xl border border-steel-200 bg-white shadow-[0_2px_10px_rgba(23,28,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(23,28,34,0.14)]"
                       >
                         <div className="relative h-44 w-full bg-steel-100">
@@ -568,4 +731,3 @@ export default function ProductDetails({ slugAndId = "" }) {
     </>
   );
 }
-

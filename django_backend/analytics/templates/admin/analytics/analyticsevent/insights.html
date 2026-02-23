@@ -1,0 +1,134 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+  <div class="module">
+    <h2>Rule-Based Product Interest Summary</h2>
+    <form method="get" style="margin: 12px 0 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: end;">
+      <div>
+        <label for="id_days"><strong>Days</strong></label><br />
+        <select name="days" id="id_days">
+          {% for value in days_options %}
+            <option value="{{ value }}" {% if selected_days == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="id_limit"><strong>Limit</strong></label><br />
+        <select name="limit" id="id_limit">
+          {% for value in limit_options %}
+            <option value="{{ value }}" {% if selected_limit == value %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="button default">Refresh</button>
+        <a href="../" class="button" style="margin-left: 8px;">Back to Events</a>
+      </div>
+    </form>
+
+    <p>
+      <strong>Window:</strong> {{ summary.window_start }} to {{ summary.window_end }}
+      <br />
+      <strong>Processed Events:</strong> {{ summary.processed_events }}
+    </p>
+  </div>
+
+  <div class="module" style="margin-top: 16px;">
+    <h2>Top Products</h2>
+    {% if summary.top_products %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Power Source</th>
+            <th>Score</th>
+            <th>Event Counts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in summary.top_products %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                {% if item.product_name %}{{ item.product_name }}{% else %}{{ item.product_slug }}{% endif %}
+                <div style="color: #666; font-size: 11px;">ID: {{ item.product_id }}</div>
+              </td>
+              <td>{{ item.power_source_name|default:item.power_source_slug }}</td>
+              <td><strong>{{ item.score }}</strong></td>
+              <td>
+                {% for key, value in item.event_counts.items %}
+                  <span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ddd; border-radius:12px; font-size:11px;">
+                    {{ key }}: {{ value }}
+                  </span>
+                {% empty %}
+                  -
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No scored product events in this window.</p>
+    {% endif %}
+  </div>
+
+  <div class="module" style="margin-top: 16px;">
+    <h2>Top Power Sources</h2>
+    {% if summary.top_power_sources %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Power Source</th>
+            <th>Score</th>
+            <th>Event Counts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in summary.top_power_sources %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ item.power_source_name|default:item.power_source_slug }}</td>
+              <td><strong>{{ item.score }}</strong></td>
+              <td>
+                {% for key, value in item.event_counts.items %}
+                  <span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ddd; border-radius:12px; font-size:11px;">
+                    {{ key }}: {{ value }}
+                  </span>
+                {% empty %}
+                  -
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No scored power-source events in this window.</p>
+    {% endif %}
+  </div>
+
+  <div class="module" style="margin-top: 16px;">
+    <h2>Current Scoring Weights</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, value in summary.weights.items %}
+          <tr>
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
