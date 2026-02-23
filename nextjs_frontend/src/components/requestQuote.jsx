@@ -15,11 +15,6 @@ const inquiryReasons = [
 
 const languages = ["English", "Hindi", "Marathi", "Tamil", "Telugu"];
 
-function isLikelyEmail(value) {
-  const normalized = String(value || "").trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
-}
-
 export default function RequestQuotePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
@@ -50,12 +45,6 @@ export default function RequestQuotePage() {
       postal_code: String(formData.get("postalCode") || "").trim(),
       subscribe_updates: formData.get("subscribeUpdates") === "on",
     };
-
-    if (!isLikelyEmail(payload.email)) {
-      setSubmitError("Enter a valid email address.");
-      setIsSubmitting(false);
-      return;
-    }
 
     try {
       const response = await fetch(apiUrl(API_ENDPOINTS.requestQuote), {

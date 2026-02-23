@@ -34,7 +34,6 @@ venv/
 .venv/
 env/
 ENV/
-geoip/
 pip-wheel-metadata/
 .python-version
 

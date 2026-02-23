@@ -177,17 +177,7 @@ def get_power_sources(request):
 @api_view(["GET"])
 def get_industries(request):
     industries_qs = Industry.objects.filter(is_visible=True).order_by("sort_order", "name")
-    data = [
-        {
-            "id": item.id,
-            "name": item.name,
-            "slug": item.slug,
-            "sort_order": item.sort_order,
-            "image_url": _build_file_url(request, item.image_url),
-            "accent_color": item.accent_color,
-        }
-        for item in industries_qs
-    ]
+    data = [{"id": item.id, "name": item.name, "slug": item.slug} for item in industries_qs]
     return Response({"count": len(data), "results": data})
 
 

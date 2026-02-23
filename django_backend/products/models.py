@@ -61,25 +61,6 @@ class Industry(models.Model):
     )
     slug = models.SlugField(max_length=200, unique=True)
     sort_order = models.IntegerField(default=0)
-    image_url = models.ImageField(
-        upload_to="industries/",
-        max_length=500,
-        blank=True,
-        validators=[
-            FileExtensionValidator(allowed_extensions=["png", "webp", "jpg", "jpeg"]),
-            validate_product_image_file_size,
-        ],
-    )
-    accent_color = models.CharField(
-        max_length=32,
-        default="#FFFFFF",
-        validators=[
-            RegexValidator(
-                regex=r"^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3}|[A-Za-z]+)$",
-                message="Accent color must be a hex color (e.g. #FF2301) or named color (e.g. white).",
-            ),
-        ],
-    )
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -87,9 +68,6 @@ class Industry(models.Model):
     class Meta:
         db_table = "industries"
         ordering = ["sort_order", "name"]
-        indexes = [
-            models.Index(fields=["is_visible", "sort_order", "name"], name="ind_vis_sort_name_idx"),
-        ]
 
     def __str__(self):
         return self.name

@@ -1,14 +1,7 @@
-const FALLBACK_API_PORT = "8000";
-
-function inferApiBaseUrl() {
-  if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:${FALLBACK_API_PORT}`;
-  }
-  return `http://127.0.0.1:${FALLBACK_API_PORT}`;
-}
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || inferApiBaseUrl();
+  process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL;
 
 export const API_ENDPOINTS = {
   contentNews: "/api/content/news",
