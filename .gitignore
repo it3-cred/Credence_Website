@@ -43,6 +43,7 @@ django_backend/db.sqlite3
 django_backend/*.sqlite3
 django_backend/media/
 django_backend/staticfiles/
+django_backend/geoip/
 
 # --- Node / Next.js / Bun ---
 node_modules/
