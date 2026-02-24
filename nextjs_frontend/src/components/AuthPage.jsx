@@ -34,13 +34,27 @@ function parseBackendError(payload, fallbackMessage) {
   return payload.error.message || fallbackMessage;
 }
 
-async function apiPost(path, body) {
-  const response = await fetch(`${getApiBase()}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(body),
-  });
+async function apiPost(path, body, { timeoutMs = 15000 } = {}) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(`${getApiBase()}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   let payload = null;
   try {

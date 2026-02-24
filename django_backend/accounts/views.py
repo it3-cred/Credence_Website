@@ -2,6 +2,7 @@ import ipaddress
 import os
 import random
 from datetime import timedelta
+from smtplib import SMTPAuthenticationError, SMTPException
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -200,13 +201,28 @@ def send_otp(request):
 
     subject = f"Your Credence {purpose.title()} OTP"
     message = f"Your OTP is {otp}. It expires in {_otp_expiry_minutes()} minutes."
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except SMTPAuthenticationError:
+        EmailOTP.objects.filter(id=otp_record.id).update(is_used=True)
+        return _error_response(
+            code="EMAIL_AUTH_FAILED",
+            message="Unable to send OTP email right now. Mail server authentication failed.",
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except (SMTPException, OSError, TimeoutError):
+        EmailOTP.objects.filter(id=otp_record.id).update(is_used=True)
+        return _error_response(
+            code="EMAIL_SEND_FAILED",
+            message="Unable to send OTP email right now. Please try again in a moment.",
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     data = {
         "email": email,
