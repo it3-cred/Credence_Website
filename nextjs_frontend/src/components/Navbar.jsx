@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics";
@@ -14,7 +14,7 @@ const navItems = [
   { label: "Careers", href: "/careers" },
 ];
 
-export default function Navbar() {
+function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
@@ -103,6 +103,7 @@ export default function Navbar() {
     return () => window.removeEventListener("click", closeUserMenu);
   }, []);
 
+
   const handleLogout = async () => {
     try {
       await fetch(`${getApiBase()}/api/auth/logout`, {
@@ -133,18 +134,14 @@ export default function Navbar() {
       page_context: "global",
       product_id: null,
       product_slug: null,
-<<<<<<< HEAD
-=======
       power_source_slug: null,
       power_source_name: null,
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     });
   };
 
   const hasRibbon = !isRibbonClosed && announcements.length > 0;
   const hasMultipleAnnouncements = announcements.length > 1;
   const latestAnnouncement = announcements[0] || null;
-
   return (
     <header className="sticky top-0 z-50 border-b border-steel-200 bg-white backdrop-blur">
       {hasRibbon ? (
@@ -504,3 +501,4 @@ export default function Navbar() {
   );
 }
 
+export default memo(Navbar);

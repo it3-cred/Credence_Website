@@ -1,11 +1,7 @@
 "use client";
 
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from "react";
-=======
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -46,6 +42,7 @@ function buildProductsUrl({ powerSource, industries, torqueMin, torqueMax, thrus
 }
 
 export default function ProductsPage({ initialPowerSourceSlug = "" }) {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState([]);
   const [powerSources, setPowerSources] = useState([]);
   const [industries, setIndustries] = useState([]);
@@ -59,16 +56,24 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const [thrustMin, setThrustMin] = useState("");
   const [thrustMax, setThrustMax] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-<<<<<<< HEAD
-  const filterTrackTimeoutRef = useRef(null);
-  const lastFilterTrackRef = useRef("");
-=======
   const lastFilterTrackSignatureRef = useRef("");
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
   useEffect(() => {
     setSelectedPowerSource(initialPowerSourceSlug || "");
   }, [initialPowerSourceSlug]);
+
+  const searchParamsKey = searchParams?.toString() || "";
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsKey);
+    const industriesParam = params.get("industries") || "";
+
+    const queryIndustries = industriesParam
+      .split(",")
+      .map((slug) => slug.trim())
+      .filter(Boolean);
+    setSelectedIndustries(queryIndustries);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -188,48 +193,6 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
     }
     return chips;
   }, [selectedPowerSourceName, selectedIndustries, industries, torqueMin, torqueMax, thrustMin, thrustMax]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    const normalizedTorque = normalizeTorqueBounds(torqueMin, torqueMax);
-    const normalizedThrust = normalizeTorqueBounds(thrustMin, thrustMax);
-    const payload = {
-      page: "products",
-      power_source_slug: selectedPowerSource || null,
-      industries: selectedIndustries,
-      torque_min: normalizedTorque.min ? Number(normalizedTorque.min) : null,
-      torque_max: normalizedTorque.max ? Number(normalizedTorque.max) : null,
-      thrust_min: normalizedThrust.min ? Number(normalizedThrust.min) : null,
-      thrust_max: normalizedThrust.max ? Number(normalizedThrust.max) : null,
-      results_count: products.length,
-    };
-    const signature = JSON.stringify(payload);
-    if (signature === lastFilterTrackRef.current) return;
-
-    if (filterTrackTimeoutRef.current) {
-      window.clearTimeout(filterTrackTimeoutRef.current);
-    }
-    filterTrackTimeoutRef.current = window.setTimeout(() => {
-      trackEvent("product_filters_applied", payload);
-      lastFilterTrackRef.current = signature;
-    }, 600);
-
-    return () => {
-      if (filterTrackTimeoutRef.current) {
-        window.clearTimeout(filterTrackTimeoutRef.current);
-        filterTrackTimeoutRef.current = null;
-      }
-    };
-  }, [
-    isLoading,
-    selectedPowerSource,
-    selectedIndustries,
-    torqueMin,
-    torqueMax,
-    thrustMin,
-    thrustMax,
-    products.length,
-  ]);
 
   const handlePowerSourceSelect = (slug) => {
     setSelectedPowerSource(slug);
@@ -460,12 +423,8 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                         product_id: product.id,
                         product_slug: product.slug || "",
                         product_name: product.name || "",
-<<<<<<< HEAD
-                        power_source_slug: product.power_source?.slug || null,
-=======
                         power_source_slug: product.power_source?.slug || selectedPowerSource || "",
                         power_source_name: product.power_source?.name || "",
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                         source_section: "products_grid",
                         position: index + 1,
                       })

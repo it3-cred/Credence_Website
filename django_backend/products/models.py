@@ -60,6 +60,25 @@ class Industry(models.Model):
         validators=[MinLengthValidator(2), RegexValidator(r".*\S.*", "Name cannot be blank.")],
     )
     slug = models.SlugField(max_length=200, unique=True)
+    image_url = models.ImageField(
+        upload_to="industries/",
+        max_length=500,
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "webp"]),
+            validate_product_image_file_size,
+        ],
+    )
+    accent_color = models.CharField(
+        max_length=16,
+        default="#FFFFFF",
+        validators=[
+            RegexValidator(
+                r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+                "Accent color must be a valid hex color (e.g. #FFF or #FFFFFF).",
+            )
+        ],
+    )
     sort_order = models.IntegerField(default=0)
     is_visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

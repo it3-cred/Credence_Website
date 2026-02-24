@@ -51,16 +51,11 @@ export default function ProductDetails({ slugAndId = "" }) {
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [requestError, setRequestError] = useState("");
-<<<<<<< HEAD
-  const trackedViewRef = useRef("");
-  const activeSecondsRef = useRef(0);
-  const activeStartedAtRef = useRef(null);
-=======
   const activeTabRef = useRef(TABS.features);
+  const hasTrackedSpecDetailViewRef = useRef(false);
   const engagementStartRef = useRef(null);
   const engagementAccumulatedMsRef = useRef(0);
   const engagementFlushedRef = useRef(false);
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
   const maxScrollPercentRef = useRef(0);
 
   useEffect(() => {
@@ -99,7 +94,14 @@ export default function ProductDetails({ slugAndId = "" }) {
   }, [parsed.id, parsed.slug]);
 
   useEffect(() => {
+    hasTrackedSpecDetailViewRef.current = false;
+  }, [product?.id]);
+
+  useEffect(() => {
     if (!product?.id) return;
+    if (activeTab !== TABS.specifications) return;
+    if (hasTrackedSpecDetailViewRef.current) return;
+
     trackEvent("product_detail_view", {
       product_id: product.id,
       product_slug: product.slug || "",
@@ -107,8 +109,10 @@ export default function ProductDetails({ slugAndId = "" }) {
       power_source_slug: product.power_source?.slug || "",
       power_source_name: product.power_source?.name || "",
       industry_slugs: Array.isArray(product.industries) ? product.industries.map((i) => i.slug).filter(Boolean) : [],
+      viewed_section: "specifications",
     });
-  }, [product?.id]);
+    hasTrackedSpecDetailViewRef.current = true;
+  }, [product?.id, activeTab]);
 
   useEffect(() => {
     let isMounted = true;
@@ -269,12 +273,9 @@ export default function ProductDetails({ slugAndId = "" }) {
     trackEvent("document_email_request_open", {
       product_id: product?.id ?? null,
       product_slug: product?.slug || "",
-<<<<<<< HEAD
-=======
       product_name: product?.name || "",
       power_source_slug: product?.power_source?.slug || "",
       power_source_name: product?.power_source?.name || "",
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
       catalogue_id: document?.id ?? null,
       document_title: document?.title || "",
       doc_type: document?.doc_type || "",
@@ -323,12 +324,6 @@ export default function ProductDetails({ slugAndId = "" }) {
       trackEvent("document_email_request_submit", {
         product_id: product?.id ?? null,
         product_slug: product?.slug || "",
-<<<<<<< HEAD
-        catalogue_id: selectedDocument?.id ?? null,
-        document_title: selectedDocument?.title || "",
-        doc_type: selectedDocument?.doc_type || "",
-        access_type: selectedDocument?.access_type || "",
-=======
         product_name: product?.name || "",
         power_source_slug: product?.power_source?.slug || "",
         power_source_name: product?.power_source?.name || "",
@@ -336,7 +331,6 @@ export default function ProductDetails({ slugAndId = "" }) {
         document_title: selectedDocument.title || "",
         doc_type: selectedDocument.doc_type || "",
         access_type: selectedDocument.access_type || "",
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         has_company_name: Boolean(requestCompany.trim()),
       });
       setTimeout(() => {
@@ -346,11 +340,7 @@ export default function ProductDetails({ slugAndId = "" }) {
       trackEvent("document_email_request_submit_failed", {
         product_id: product?.id ?? null,
         product_slug: product?.slug || "",
-<<<<<<< HEAD
-        catalogue_id: selectedDocument?.id ?? null,
-=======
         catalogue_id: selectedDocument.id,
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         error_type: "request_submit_failed",
       });
       setRequestError(submitError.message || "Failed to submit request.");
@@ -369,94 +359,6 @@ export default function ProductDetails({ slugAndId = "" }) {
     }
   }, [documentTypes, activeDocumentType]);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    if (!product?.id) return;
-    const signature = `${product.id}:${product.slug || ""}`;
-    if (trackedViewRef.current === signature) return;
-    trackEvent("product_detail_view", {
-      product_id: product.id,
-      product_slug: product.slug || "",
-      product_name: product.name || "",
-      power_source_slug: product.power_source?.slug || null,
-      industry_slugs: Array.isArray(product.industries) ? product.industries.map((item) => item.slug).filter(Boolean) : [],
-    });
-    trackedViewRef.current = signature;
-  }, [product]);
-
-  useEffect(() => {
-    if (!product?.id) return undefined;
-
-    activeSecondsRef.current = 0;
-    activeStartedAtRef.current = document.visibilityState === "visible" ? Date.now() : null;
-    maxScrollPercentRef.current = 0;
-
-    const updateScroll = () => {
-      const doc = document.documentElement;
-      const scrollTop = window.scrollY || doc.scrollTop || 0;
-      const maxScrollable = Math.max(doc.scrollHeight - window.innerHeight, 0);
-      const percent = maxScrollable > 0 ? Math.round((scrollTop / maxScrollable) * 100) : 0;
-      if (percent > maxScrollPercentRef.current) {
-        maxScrollPercentRef.current = Math.min(percent, 100);
-      }
-    };
-
-    const pauseTimer = () => {
-      if (activeStartedAtRef.current) {
-        activeSecondsRef.current += (Date.now() - activeStartedAtRef.current) / 1000;
-        activeStartedAtRef.current = null;
-      }
-    };
-
-    const resumeTimer = () => {
-      if (!activeStartedAtRef.current && document.visibilityState === "visible" && document.hasFocus()) {
-        activeStartedAtRef.current = Date.now();
-      }
-    };
-
-    const flushEngagement = () => {
-      pauseTimer();
-      const activeSeconds = Math.round(activeSecondsRef.current);
-      if (activeSeconds <= 0) return;
-      trackEvent("page_engagement", {
-        page_type: "product_detail",
-        product_id: product.id,
-        product_slug: product.slug || "",
-        active_seconds: activeSeconds,
-        max_scroll_percent: maxScrollPercentRef.current,
-      });
-      activeSecondsRef.current = 0;
-      resumeTimer();
-    };
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        flushEngagement();
-      } else {
-        resumeTimer();
-      }
-    };
-
-    const onBlur = () => pauseTimer();
-    const onFocus = () => resumeTimer();
-
-    updateScroll();
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("pagehide", flushEngagement);
-
-    return () => {
-      flushEngagement();
-      window.removeEventListener("scroll", updateScroll);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("pagehide", flushEngagement);
-    };
-  }, [product?.id, product?.slug]);
-=======
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     if (!product?.id) return;
@@ -469,7 +371,6 @@ export default function ProductDetails({ slugAndId = "" }) {
       tab,
     });
   };
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
   return (
     <>
@@ -559,20 +460,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                 <div className="flex flex-wrap border-b border-steel-300 bg-white">
                   <button
                     type="button"
-<<<<<<< HEAD
-                    onClick={() => {
-                      setActiveTab(TABS.features);
-                      if (product?.id) {
-                        trackEvent("product_detail_tab_click", {
-                          product_id: product.id,
-                          product_slug: product.slug || "",
-                          tab: "features",
-                        });
-                      }
-                    }}
-=======
                     onClick={() => handleTabClick(TABS.features)}
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.features ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -586,20 +474,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
-<<<<<<< HEAD
-                    onClick={() => {
-                      setActiveTab(TABS.specifications);
-                      if (product?.id) {
-                        trackEvent("product_detail_tab_click", {
-                          product_id: product.id,
-                          product_slug: product.slug || "",
-                          tab: "specifications",
-                        });
-                      }
-                    }}
-=======
                     onClick={() => handleTabClick(TABS.specifications)}
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.specifications ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -613,20 +488,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
-<<<<<<< HEAD
-                    onClick={() => {
-                      setActiveTab(TABS.documents);
-                      if (product?.id) {
-                        trackEvent("product_detail_tab_click", {
-                          product_id: product.id,
-                          product_slug: product.slug || "",
-                          tab: "documents",
-                        });
-                      }
-                    }}
-=======
                     onClick={() => handleTabClick(TABS.documents)}
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.documents ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -741,13 +603,6 @@ export default function ProductDetails({ slugAndId = "" }) {
                                       trackEvent("document_download_click", {
                                         product_id: product?.id ?? null,
                                         product_slug: product?.slug || "",
-<<<<<<< HEAD
-                                        catalogue_id: document.id,
-                                        document_title: document.title || "",
-                                        doc_type: document.doc_type || "",
-                                        access_type: "DIRECT",
-                                        document_tab_category: document.doc_type || "",
-=======
                                         product_name: product?.name || "",
                                         power_source_slug: product?.power_source?.slug || "",
                                         power_source_name: product?.power_source?.name || "",
@@ -755,7 +610,6 @@ export default function ProductDetails({ slugAndId = "" }) {
                                         document_title: document.title || "",
                                         doc_type: document.doc_type || "",
                                         access_type: document.access_type || "",
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                                       })
                                     }
                                     className="rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-500 hover:text-white"
@@ -794,12 +648,8 @@ export default function ProductDetails({ slugAndId = "" }) {
                             product_id: item.id,
                             product_slug: item.slug || "",
                             product_name: item.name || "",
-<<<<<<< HEAD
-                            power_source_slug: item.power_source?.slug || null,
-=======
                             power_source_slug: item.power_source?.slug || product?.power_source?.slug || "",
                             power_source_name: item.power_source?.name || product?.power_source?.name || "",
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                             source_section: "similar_products",
                             position: index + 1,
                           })

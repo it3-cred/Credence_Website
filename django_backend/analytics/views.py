@@ -1,8 +1,5 @@
 from datetime import timedelta
-<<<<<<< HEAD
-=======
 from decimal import Decimal
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -17,27 +14,6 @@ from .models import AnalyticsEvent
 
 MAX_EVENTS_PER_BATCH = 50
 MAX_PAGE_PATH_LENGTH = 500
-<<<<<<< HEAD
-MAX_REFERRER_LENGTH = 500
-MAX_PAGE_TITLE_LENGTH = 255
-DEFAULT_SCORING_DAYS = 30
-MAX_SCORING_DAYS = 180
-
-
-# Rule-based product interest scoring weights. Keep this small and explicit so it is
-# easy to validate/tune with actual usage data before introducing more complex models.
-INTEREST_WEIGHTS = {
-    AnalyticsEvent.EVENT_PRODUCT_CLICK: 1,
-    AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW: 3,
-    "page_engagement_30s": 3,
-    "page_engagement_90s": 2,
-    "tab_specifications": 2,
-    "tab_documents": 3,
-    "tab_features": 1,
-    AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK: 5,
-    AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT: 7,
-    "request_quote_click_product_detail": 8,
-=======
 MAX_PAGE_TITLE_LENGTH = 255
 MAX_REFERRER_LENGTH = 500
 MAX_USER_AGENT_LENGTH = 4000
@@ -47,13 +23,13 @@ MAX_SUMMARY_DAYS = 180
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 100
 
-# Logged-in user interest scoring rules (v1). Keep explicit + easy to tune.
 USER_INTEREST_WEIGHTS = {
     "nav_click_products": 1,
     AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK: 2,
     AnalyticsEvent.EVENT_INDUSTRY_CARD_CLICK: 2,
     AnalyticsEvent.EVENT_PRODUCT_FILTERS_APPLIED: 1,
     AnalyticsEvent.EVENT_PRODUCT_CLICK: 2,
+    AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW: 3,
     "tab_features": 1,
     "tab_specifications": 3,
     "tab_documents": 4,
@@ -61,11 +37,15 @@ USER_INTEREST_WEIGHTS = {
     AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK: 5,
     AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT: 7,
     "page_engagement_120s": 6,
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 }
 
 
 def _get_session_user(request):
+    # Prefer Django auth user if present.
+    django_user = getattr(request, "user", None)
+    if getattr(django_user, "is_authenticated", False):
+        return User.objects.filter(id=django_user.id, is_active=True).first()
+
     user_id = request.session.get("account_user_id")
     if not user_id:
         return None
@@ -76,19 +56,11 @@ def _detect_device_type(user_agent: str) -> str:
     ua = (user_agent or "").lower()
     if not ua:
         return ""
-<<<<<<< HEAD
-    if "bot" in ua or "spider" in ua or "crawler" in ua:
-        return "bot"
-    if "ipad" in ua or "tablet" in ua:
-        return "tablet"
-    if "mobi" in ua or "android" in ua or "iphone" in ua:
-=======
     if any(token in ua for token in ("bot", "spider", "crawler")):
         return "bot"
     if any(token in ua for token in ("ipad", "tablet")):
         return "tablet"
     if any(token in ua for token in ("mobi", "android", "iphone")):
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         return "mobile"
     return "desktop"
 
@@ -104,30 +76,14 @@ def _coerce_event_time(value):
     return parsed
 
 
-<<<<<<< HEAD
-def _validate_properties(properties):
-    if properties is None:
-        return {}
-    if not isinstance(properties, dict):
-        return None
-    return properties
-=======
 def _validate_properties(value):
     if value is None:
         return {}
     return value if isinstance(value, dict) else None
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
 
 def _coerce_int(value, default=None, min_value=None, max_value=None):
     if value in (None, ""):
-<<<<<<< HEAD
-        return default
-    try:
-        result = int(value)
-    except (TypeError, ValueError):
-        return default
-=======
         result = default
     else:
         try:
@@ -136,7 +92,6 @@ def _coerce_int(value, default=None, min_value=None, max_value=None):
             result = default
     if result is None:
         return None
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     if min_value is not None and result < min_value:
         result = min_value
     if max_value is not None and result > max_value:
@@ -144,20 +99,6 @@ def _coerce_int(value, default=None, min_value=None, max_value=None):
     return result
 
 
-<<<<<<< HEAD
-def _coerce_number(value):
-    if value in (None, ""):
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _event_product_context(event: AnalyticsEvent):
-    props = event.properties or {}
-    product_id = _coerce_int(props.get("product_id"))
-=======
 def _coerce_decimal(value):
     if value in (None, ""):
         return None
@@ -174,149 +115,10 @@ def _safe_str(value, max_len=None):
 
 def _event_product_ctx(properties):
     product_id = _coerce_int(properties.get("product_id"))
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     if not product_id:
         return None
     return {
         "product_id": product_id,
-<<<<<<< HEAD
-        "product_slug": str(props.get("product_slug") or ""),
-        "product_name": str(props.get("product_name") or ""),
-        "power_source_slug": str(props.get("power_source_slug") or ""),
-        "power_source_name": str(props.get("power_source_name") or ""),
-    }
-
-
-def _add_product_score(bucket, product_ctx, points, event_name):
-    if points <= 0 or not product_ctx:
-        return
-    product_key = str(product_ctx["product_id"])
-    if product_key not in bucket:
-        bucket[product_key] = {
-            "product_id": product_ctx["product_id"],
-            "product_slug": product_ctx.get("product_slug") or "",
-            "product_name": product_ctx.get("product_name") or "",
-            "power_source_slug": product_ctx.get("power_source_slug") or "",
-            "power_source_name": product_ctx.get("power_source_name") or "",
-            "score": 0,
-            "event_counts": {},
-        }
-    row = bucket[product_key]
-    if not row["product_slug"] and product_ctx.get("product_slug"):
-        row["product_slug"] = product_ctx["product_slug"]
-    if not row["product_name"] and product_ctx.get("product_name"):
-        row["product_name"] = product_ctx["product_name"]
-    if not row["power_source_slug"] and product_ctx.get("power_source_slug"):
-        row["power_source_slug"] = product_ctx["power_source_slug"]
-    if not row["power_source_name"] and product_ctx.get("power_source_name"):
-        row["power_source_name"] = product_ctx["power_source_name"]
-
-    row["score"] += points
-    row["event_counts"][event_name] = row["event_counts"].get(event_name, 0) + 1
-
-
-def _add_power_source_score(bucket, slug, name, points, event_name):
-    if points <= 0 or not slug:
-        return
-    if slug not in bucket:
-        bucket[slug] = {
-            "power_source_slug": slug,
-            "power_source_name": name or "",
-            "score": 0,
-            "event_counts": {},
-        }
-    row = bucket[slug]
-    if not row["power_source_name"] and name:
-        row["power_source_name"] = name
-    row["score"] += points
-    row["event_counts"][event_name] = row["event_counts"].get(event_name, 0) + 1
-
-
-def _score_event(event: AnalyticsEvent):
-    props = event.properties or {}
-    event_name = event.event_name
-    product_ctx = _event_product_context(event)
-    product_points = 0
-    power_source_points = 0
-    score_label = event_name
-
-    if event_name == AnalyticsEvent.EVENT_PRODUCT_CLICK:
-        product_points = INTEREST_WEIGHTS[AnalyticsEvent.EVENT_PRODUCT_CLICK]
-        power_source_points = product_points
-    elif event_name == AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW:
-        product_points = INTEREST_WEIGHTS[AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW]
-        power_source_points = product_points
-    elif event_name == AnalyticsEvent.EVENT_PAGE_ENGAGEMENT:
-        active_seconds = _coerce_number(props.get("active_seconds")) or 0
-        page_type = str(props.get("page_type") or "")
-        if page_type == "product_detail" and product_ctx and active_seconds >= 30:
-            product_points += INTEREST_WEIGHTS["page_engagement_30s"]
-            power_source_points += INTEREST_WEIGHTS["page_engagement_30s"]
-            score_label = "page_engagement_30s"
-            if active_seconds >= 90:
-                product_points += INTEREST_WEIGHTS["page_engagement_90s"]
-                power_source_points += INTEREST_WEIGHTS["page_engagement_90s"]
-                score_label = "page_engagement_90s"
-    elif event_name == AnalyticsEvent.EVENT_PRODUCT_DETAIL_TAB_CLICK and product_ctx:
-        tab = str(props.get("tab") or "").lower()
-        if tab == "specifications":
-            product_points = INTEREST_WEIGHTS["tab_specifications"]
-            power_source_points = product_points
-            score_label = "tab_specifications"
-        elif tab == "documents":
-            product_points = INTEREST_WEIGHTS["tab_documents"]
-            power_source_points = product_points
-            score_label = "tab_documents"
-        elif tab == "features":
-            product_points = INTEREST_WEIGHTS["tab_features"]
-            power_source_points = product_points
-            score_label = "tab_features"
-    elif event_name == AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK and product_ctx:
-        product_points = INTEREST_WEIGHTS[AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK]
-        power_source_points = product_points
-    elif event_name == AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT and product_ctx:
-        product_points = INTEREST_WEIGHTS[AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT]
-        power_source_points = product_points
-    elif event_name == AnalyticsEvent.EVENT_REQUEST_QUOTE_CLICK:
-        source_section = str(props.get("source_section") or "").lower()
-        if source_section == "product_detail" and product_ctx:
-            product_points = INTEREST_WEIGHTS["request_quote_click_product_detail"]
-            power_source_points = product_points
-            score_label = "request_quote_click_product_detail"
-    elif event_name == AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK:
-        slug = str(props.get("power_source_slug") or "")
-        name = str(props.get("power_source_name") or "")
-        points = 1
-        return {
-            "product_ctx": None,
-            "product_points": 0,
-            "power_source_slug": slug,
-            "power_source_name": name,
-            "power_source_points": points,
-            "score_label": AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK,
-        }
-
-    power_source_slug = ""
-    power_source_name = ""
-    if product_ctx:
-        power_source_slug = product_ctx.get("power_source_slug") or ""
-        power_source_name = product_ctx.get("power_source_name") or ""
-
-    return {
-        "product_ctx": product_ctx,
-        "product_points": product_points,
-        "power_source_slug": power_source_slug,
-        "power_source_name": power_source_name,
-        "power_source_points": power_source_points,
-        "score_label": score_label,
-    }
-
-
-def build_product_interest_summary(*, days=DEFAULT_SCORING_DAYS, limit=10):
-    days = _coerce_int(days, default=DEFAULT_SCORING_DAYS, min_value=1, max_value=MAX_SCORING_DAYS)
-    limit = _coerce_int(limit, default=10, min_value=1, max_value=100)
-
-=======
         "product_slug": _safe_str(properties.get("product_slug")),
         "product_name": _safe_str(properties.get("product_name")),
         "power_source_slug": _safe_str(properties.get("power_source_slug")),
@@ -354,6 +156,8 @@ def _score_logged_in_event(event):
         points = USER_INTEREST_WEIGHTS[AnalyticsEvent.EVENT_PRODUCT_FILTERS_APPLIED]
     elif event.event_name == AnalyticsEvent.EVENT_PRODUCT_CLICK:
         points = USER_INTEREST_WEIGHTS[AnalyticsEvent.EVENT_PRODUCT_CLICK]
+    elif event.event_name == AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW:
+        points = USER_INTEREST_WEIGHTS[AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW]
     elif event.event_name == AnalyticsEvent.EVENT_PRODUCT_DETAIL_TAB_CLICK:
         tab = _safe_str(props.get("tab")).lower()
         if tab == "features":
@@ -420,31 +224,27 @@ def _add_popularity_row(bucket, key, base_payload, metric_key):
     _increment_count(bucket[key]["counts"], metric_key)
 
 
+def _track_unique_anon(bucket, key, anon_id, metric_key=None):
+    if not key or not anon_id or key not in bucket:
+        return
+    row = bucket[key]
+    row.setdefault("_unique_anon_ids", set()).add(anon_id)
+    if metric_key:
+        metric_map = row.setdefault("_unique_metric_anon_ids", {})
+        metric_map.setdefault(metric_key, set()).add(anon_id)
+
+
 def _build_logged_in_interest_summary(*, user, days, limit):
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     end_time = timezone.now()
     start_time = end_time - timedelta(days=days)
 
     relevant_events = [
-<<<<<<< HEAD
-        AnalyticsEvent.EVENT_PRODUCT_CLICK,
-        AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW,
-        AnalyticsEvent.EVENT_PAGE_ENGAGEMENT,
-        AnalyticsEvent.EVENT_PRODUCT_DETAIL_TAB_CLICK,
-        AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK,
-        AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT,
-        AnalyticsEvent.EVENT_REQUEST_QUOTE_CLICK,
-        AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK,
-    ]
-
-    events_qs = (
-        AnalyticsEvent.objects.filter(event_time__gte=start_time, event_time__lte=end_time, event_name__in=relevant_events)
-=======
         AnalyticsEvent.EVENT_NAV_CLICK,
         AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK,
         AnalyticsEvent.EVENT_INDUSTRY_CARD_CLICK,
         AnalyticsEvent.EVENT_PRODUCT_FILTERS_APPLIED,
         AnalyticsEvent.EVENT_PRODUCT_CLICK,
+        AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW,
         AnalyticsEvent.EVENT_PRODUCT_DETAIL_TAB_CLICK,
         AnalyticsEvent.EVENT_REQUEST_QUOTE_CLICK,
         AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK,
@@ -453,45 +253,19 @@ def _build_logged_in_interest_summary(*, user, days, limit):
     ]
 
     qs = (
-        AnalyticsEvent.objects.filter(user=user, event_time__gte=start_time, event_time__lte=end_time, event_name__in=relevant_events)
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
+        AnalyticsEvent.objects.filter(
+            user=user,
+            event_time__gte=start_time,
+            event_time__lte=end_time,
+            event_name__in=relevant_events,
+        )
         .order_by("-event_time")
-        .only("event_name", "event_time", "properties")
+        .only("event_name", "event_time", "properties", "anon_id")
     )
 
-<<<<<<< HEAD
-    product_scores = {}
-    power_source_scores = {}
-    processed = 0
-
-    for event in events_qs.iterator(chunk_size=500):
-        processed += 1
-        scored = _score_event(event)
-        label = scored["score_label"]
-        _add_product_score(product_scores, scored["product_ctx"], scored["product_points"], label)
-        _add_power_source_score(
-            power_source_scores,
-            scored["power_source_slug"],
-            scored["power_source_name"],
-            scored["power_source_points"],
-            label,
-        )
-
-    top_products = sorted(product_scores.values(), key=lambda item: (-item["score"], item["product_id"]))[:limit]
-    top_power_sources = sorted(power_source_scores.values(), key=lambda item: (-item["score"], item["power_source_slug"]))[:limit]
-
-    return {
-        "window_days": days,
-        "limit": limit,
-        "window_start": start_time,
-        "window_end": end_time,
-        "weights": INTEREST_WEIGHTS,
-        "processed_events": processed,
-        "top_products": top_products,
-        "top_power_sources": top_power_sources,
-=======
     total_score = 0
     overall_counts = {}
+    unscored_event_counts = {}
     by_product = {}
     by_power_source = {}
     by_industry = {}
@@ -502,7 +276,9 @@ def _build_logged_in_interest_summary(*, user, days, limit):
         scored = _score_logged_in_event(event)
         points = scored["points"]
         if points <= 0:
+            _increment_count(unscored_event_counts, event.event_name)
             continue
+
         total_score += points
         _increment_count(overall_counts, scored["score_label"])
 
@@ -559,6 +335,7 @@ def _build_logged_in_interest_summary(*, user, days, limit):
         "user": {"id": user.id, "email": user.email, "name": user.name},
         "overall_interest_score": total_score,
         "overall_event_counts": overall_counts,
+        "unscored_event_counts": unscored_event_counts,
         "top_products": top_products,
         "top_power_sources": top_power_sources,
         "top_industries": top_industries,
@@ -605,6 +382,7 @@ def _build_anonymous_popularity_summary(*, days, limit):
     for event in qs.iterator(chunk_size=500):
         processed_events += 1
         props = event.properties or {}
+        anon_id = _safe_str(event.anon_id)
         _increment_count(totals, event.event_name)
 
         if event.event_name in (AnalyticsEvent.EVENT_PRODUCT_CLICK, AnalyticsEvent.EVENT_PRODUCT_DETAIL_VIEW):
@@ -622,6 +400,7 @@ def _build_anonymous_popularity_summary(*, days, limit):
                     },
                     metric,
                 )
+                _track_unique_anon(products, str(product_ctx["product_id"]), anon_id, metric)
         elif event.event_name in (
             AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK,
             AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT,
@@ -643,6 +422,7 @@ def _build_anonymous_popularity_summary(*, days, limit):
                     },
                     metric,
                 )
+                _track_unique_anon(documents, str(doc_ctx["catalogue_id"]), anon_id, metric)
         elif event.event_name == AnalyticsEvent.EVENT_POWER_SOURCE_CARD_CLICK:
             slug = _safe_str(props.get("power_source_slug"))
             _add_popularity_row(
@@ -654,6 +434,7 @@ def _build_anonymous_popularity_summary(*, days, limit):
                 },
                 "clicks",
             )
+            _track_unique_anon(power_sources, slug, anon_id, "clicks")
         elif event.event_name == AnalyticsEvent.EVENT_INDUSTRY_CARD_CLICK:
             slug = _safe_str(props.get("industry_slug"))
             _add_popularity_row(
@@ -665,9 +446,9 @@ def _build_anonymous_popularity_summary(*, days, limit):
                 },
                 "clicks",
             )
+            _track_unique_anon(industries, slug, anon_id, "clicks")
 
     def _score_counts(counts):
-        # Simple popularity sort: weighted toward deeper actions.
         return (
             counts.get("email_requests", 0) * 5
             + counts.get("downloads", 0) * 4
@@ -679,11 +460,39 @@ def _build_anonymous_popularity_summary(*, days, limit):
     for bucket in (products, documents, power_sources, industries):
         for row in bucket.values():
             row["popularity_score"] = _score_counts(row["counts"])
+            unique_anon_ids = row.pop("_unique_anon_ids", set())
+            row["unique_anonymous_users"] = len(unique_anon_ids)
+            metric_sets = row.pop("_unique_metric_anon_ids", {})
+            row["unique_counts"] = {metric: len(ids) for metric, ids in metric_sets.items()}
 
-    top_products = sorted(products.values(), key=lambda x: (-x["popularity_score"], -x["counts"].get("detail_views", 0), x.get("product_id") or 0))[:limit]
-    top_documents = sorted(documents.values(), key=lambda x: (-x["popularity_score"], -x["counts"].get("downloads", 0), x.get("catalogue_id") or 0))[:limit]
-    top_power_sources = sorted(power_sources.values(), key=lambda x: (-x["popularity_score"], x.get("power_source_slug") or ""))[:limit]
-    top_industries = sorted(industries.values(), key=lambda x: (-x["popularity_score"], x.get("industry_slug") or ""))[:limit]
+    top_products = sorted(
+        products.values(),
+        key=lambda x: (
+            -x["counts"].get("detail_views", 0),
+            -x["unique_counts"].get("detail_views", 0),
+            -x["counts"].get("product_clicks", 0),
+            -x["unique_counts"].get("product_clicks", 0),
+            x.get("product_id") or 0,
+        ),
+    )[:limit]
+    top_documents = sorted(
+        documents.values(),
+        key=lambda x: (
+            -x["counts"].get("downloads", 0),
+            -x["unique_counts"].get("downloads", 0),
+            -x["counts"].get("email_requests", 0),
+            -x["unique_counts"].get("email_requests", 0),
+            x.get("catalogue_id") or 0,
+        ),
+    )[:limit]
+    top_power_sources = sorted(
+        power_sources.values(),
+        key=lambda x: (-x["popularity_score"], x.get("power_source_slug") or ""),
+    )[:limit]
+    top_industries = sorted(
+        industries.values(),
+        key=lambda x: (-x["popularity_score"], x.get("industry_slug") or ""),
+    )[:limit]
 
     return {
         "window_days": days,
@@ -702,6 +511,83 @@ def build_anonymous_popularity_summary(*, days=DEFAULT_SUMMARY_DAYS, limit=DEFAU
     days = _coerce_int(days, default=DEFAULT_SUMMARY_DAYS, min_value=1, max_value=MAX_SUMMARY_DAYS)
     limit = _coerce_int(limit, default=DEFAULT_LIMIT, min_value=1, max_value=MAX_LIMIT)
     return _build_anonymous_popularity_summary(days=days, limit=limit)
+
+
+def build_logged_in_document_activity_summary(*, days=DEFAULT_SUMMARY_DAYS, limit=DEFAULT_LIMIT):
+    days = _coerce_int(days, default=DEFAULT_SUMMARY_DAYS, min_value=1, max_value=MAX_SUMMARY_DAYS)
+    limit = _coerce_int(limit, default=DEFAULT_LIMIT, min_value=1, max_value=MAX_LIMIT)
+
+    end_time = timezone.now()
+    start_time = end_time - timedelta(days=days)
+
+    qs = (
+        AnalyticsEvent.objects.filter(
+            user__isnull=False,
+            event_time__gte=start_time,
+            event_time__lte=end_time,
+            event_name__in=[
+                AnalyticsEvent.EVENT_DOCUMENT_DOWNLOAD_CLICK,
+                AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT,
+            ],
+        )
+        .order_by("-event_time")
+        .select_related("user")
+        .only("event_name", "properties", "user_id", "user__id", "user__name", "user__email")
+    )
+
+    documents = {}
+    processed_events = 0
+    for event in qs.iterator(chunk_size=500):
+        processed_events += 1
+        props = event.properties or {}
+        doc_ctx = _event_document_ctx(props)
+        if not doc_ctx:
+            continue
+        product_ctx = _event_product_ctx(props)
+        if not event.user_id:
+            continue
+        key = f"{event.user_id}:{doc_ctx['catalogue_id']}"
+        metric = "email_requests" if event.event_name == AnalyticsEvent.EVENT_DOCUMENT_EMAIL_REQUEST_SUBMIT else "downloads"
+        _add_popularity_row(
+            documents,
+            key,
+            {
+                "user": {
+                    "id": event.user_id,
+                    "name": getattr(event.user, "name", "") or "",
+                    "email": getattr(event.user, "email", "") or "",
+                },
+                "catalogue_id": doc_ctx["catalogue_id"],
+                "document_title": doc_ctx["document_title"],
+                "doc_type": doc_ctx["doc_type"],
+                "access_type": doc_ctx["access_type"],
+                "product_id": product_ctx["product_id"] if product_ctx else None,
+                "product_slug": product_ctx["product_slug"] if product_ctx else "",
+            },
+            metric,
+        )
+        row = documents[key]
+        # In this table each row is already user+document scoped, so "unique" counts are binary per metric.
+        row.setdefault("unique_counts", {})
+        row["unique_counts"][metric] = 1
+
+    top_documents = sorted(
+        documents.values(),
+        key=lambda x: (
+            -x["counts"].get("downloads", 0),
+            -x["counts"].get("email_requests", 0),
+            (x.get("user", {}) or {}).get("id") or 0,
+            x.get("catalogue_id") or 0,
+        ),
+    )[:limit]
+
+    return {
+        "window_days": days,
+        "window_start": start_time,
+        "window_end": end_time,
+        "processed_events": processed_events,
+        "top_documents": top_documents,
+    }
 
 
 def build_user_interest_leaderboard(*, days=DEFAULT_SUMMARY_DAYS, limit=20, per_user_top_limit=3):
@@ -727,6 +613,7 @@ def build_user_interest_leaderboard(*, days=DEFAULT_SUMMARY_DAYS, limit=20, per_
                 "overall_interest_score": summary["overall_interest_score"],
                 "processed_events": summary["processed_events"],
                 "overall_event_counts": summary["overall_event_counts"],
+                "unscored_event_counts": summary["unscored_event_counts"],
                 "top_products": summary["top_products"][:per_user_top_limit],
                 "top_power_sources": summary["top_power_sources"][:per_user_top_limit],
                 "top_industries": summary["top_industries"][:per_user_top_limit],
@@ -740,7 +627,6 @@ def build_user_interest_leaderboard(*, days=DEFAULT_SUMMARY_DAYS, limit=20, per_
         "window_end": end_time,
         "users": rows[:limit],
         "weights": USER_INTEREST_WEIGHTS,
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     }
 
 
@@ -763,11 +649,7 @@ def ingest_events(request):
 
     allowed_event_names = {choice[0] for choice in AnalyticsEvent.EVENT_CHOICES}
     request_user = _get_session_user(request)
-<<<<<<< HEAD
-    user_agent = request.META.get("HTTP_USER_AGENT", "")
-=======
     user_agent = _safe_str(request.META.get("HTTP_USER_AGENT", ""), MAX_USER_AGENT_LENGTH)
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     device_type = _detect_device_type(user_agent)
 
     to_create = []
@@ -780,19 +662,11 @@ def ingest_events(request):
 
         event_name = item.get("event_name")
         event_time = _coerce_event_time(item.get("event_time"))
-<<<<<<< HEAD
-        session_id = str(item.get("session_id") or "").strip()
-        anon_id = str(item.get("anon_id") or "").strip()
-        page_path = str(item.get("page_path") or "").strip()
-        page_title = str(item.get("page_title") or "").strip()
-        referrer = str(item.get("referrer") or "").strip()
-=======
         session_id = _safe_str(item.get("session_id"), 128)
         anon_id = _safe_str(item.get("anon_id"), 128)
         page_path = _safe_str(item.get("page_path"), MAX_PAGE_PATH_LENGTH)
         page_title = _safe_str(item.get("page_title"), MAX_PAGE_TITLE_LENGTH)
         referrer = _safe_str(item.get("referrer"), MAX_REFERRER_LENGTH)
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         properties = _validate_properties(item.get("properties"))
 
         if event_name not in allowed_event_names:
@@ -818,16 +692,6 @@ def ingest_events(request):
             AnalyticsEvent(
                 event_name=event_name,
                 event_time=event_time,
-<<<<<<< HEAD
-                session_id=session_id[:128],
-                anon_id=anon_id[:128],
-                user=request_user,
-                page_path=page_path[:MAX_PAGE_PATH_LENGTH],
-                page_title=page_title[:MAX_PAGE_TITLE_LENGTH],
-                referrer=referrer[:MAX_REFERRER_LENGTH],
-                properties=properties,
-                user_agent=user_agent[:4000],
-=======
                 session_id=session_id,
                 anon_id=anon_id,
                 user=request_user,
@@ -836,7 +700,6 @@ def ingest_events(request):
                 referrer=referrer,
                 properties=properties,
                 user_agent=user_agent,
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                 device_type=device_type,
             )
         )
@@ -854,10 +717,6 @@ def ingest_events(request):
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-<<<<<<< HEAD
-def product_interest_summary(request):
-    summary = build_product_interest_summary(
-=======
 def my_interest_summary(request):
     user = _get_session_user(request)
     if not user:
@@ -876,7 +735,6 @@ def my_interest_summary(request):
 @permission_classes([AllowAny])
 def anonymous_popularity_summary(request):
     summary = build_anonymous_popularity_summary(
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         days=request.query_params.get("days"),
         limit=request.query_params.get("limit"),
     )

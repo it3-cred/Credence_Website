@@ -3,31 +3,17 @@
 {% block content %}
 <div id="content-main">
   <div class="module">
-<<<<<<< HEAD
-    <h2>Rule-Based Product Interest Summary</h2>
-    <form method="get" style="margin: 12px 0 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: end;">
-      <div>
-        <label for="id_days"><strong>Days</strong></label><br />
-        <select name="days" id="id_days">
-=======
     <h2>Analytics Insights</h2>
     <form method="get" style="margin:12px 0 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
       <div>
         <label for="id_days"><strong>Days</strong></label><br>
         <select id="id_days" name="days">
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
           {% for value in days_options %}
             <option value="{{ value }}" {% if selected_days == value %}selected{% endif %}>{{ value }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-<<<<<<< HEAD
-        <label for="id_limit"><strong>Limit</strong></label><br />
-        <select name="limit" id="id_limit">
-          {% for value in limit_options %}
-            <option value="{{ value }}" {% if selected_limit == value %}selected{% endif %}>{{ value }}</option>
-=======
         <label for="id_user_limit"><strong>Users Limit</strong></label><br>
         <select id="id_user_limit" name="user_limit">
           {% for value in limit_options %}
@@ -40,28 +26,11 @@
         <select id="id_anon_limit" name="anon_limit">
           {% for value in limit_options %}
             <option value="{{ value }}" {% if selected_anon_limit == value %}selected{% endif %}>{{ value }}</option>
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
           {% endfor %}
         </select>
       </div>
       <div>
         <button type="submit" class="button default">Refresh</button>
-<<<<<<< HEAD
-        <a href="../" class="button" style="margin-left: 8px;">Back to Events</a>
-      </div>
-    </form>
-
-    <p>
-      <strong>Window:</strong> {{ summary.window_start }} to {{ summary.window_end }}
-      <br />
-      <strong>Processed Events:</strong> {{ summary.processed_events }}
-    </p>
-  </div>
-
-  <div class="module" style="margin-top: 16px;">
-    <h2>Top Products</h2>
-    {% if summary.top_products %}
-=======
         <a href="../" class="button" style="margin-left:8px;">Back to Raw Events</a>
       </div>
     </form>
@@ -69,8 +38,9 @@
 
   <div class="module">
     <h2>Logged-in Users Interest Scores</h2>
-    <p>
-      <strong>Window:</strong> {{ user_summary.window_start }} to {{ user_summary.window_end }}
+    <p><strong>Window:</strong> {{ user_summary.window_start }} to {{ user_summary.window_end }}</p>
+    <p style="margin:6px 0 10px;color:#555;">
+      Product detail views are now scored. Page engagement scores only when <strong>active_seconds &gt;= 120</strong>.
     </p>
     {% if user_summary.users %}
       <table>
@@ -79,7 +49,6 @@
             <th>#</th>
             <th>User</th>
             <th>Interest Score</th>
-            <th>Processed Events</th>
             <th>Top Products</th>
             <th>Top Power Sources</th>
             <th>Top Industries</th>
@@ -95,33 +64,20 @@
                 <div style="color:#777;font-size:11px;">User ID: {{ row.user.id }}</div>
               </td>
               <td><strong>{{ row.overall_interest_score }}</strong></td>
-              <td>{{ row.processed_events }}</td>
               <td>
                 {% for item in row.top_products %}
-                  <div style="margin-bottom:4px;">
-                    {{ item.product_name|default:item.product_slug|default:item.product_id }} ({{ item.score }})
-                  </div>
-                {% empty %}
-                  -
-                {% endfor %}
+                  <div style="margin-bottom:4px;">{{ item.product_name|default:item.product_slug|default:item.product_id }} ({{ item.score }})</div>
+                {% empty %}-{% endfor %}
               </td>
               <td>
                 {% for item in row.top_power_sources %}
-                  <div style="margin-bottom:4px;">
-                    {{ item.power_source_name|default:item.power_source_slug }} ({{ item.score }})
-                  </div>
-                {% empty %}
-                  -
-                {% endfor %}
+                  <div style="margin-bottom:4px;">{{ item.power_source_name|default:item.power_source_slug }} ({{ item.score }})</div>
+                {% empty %}-{% endfor %}
               </td>
               <td>
                 {% for item in row.top_industries %}
-                  <div style="margin-bottom:4px;">
-                    {{ item.industry_name|default:item.industry_slug }} ({{ item.score }})
-                  </div>
-                {% empty %}
-                  -
-                {% endfor %}
+                  <div style="margin-bottom:4px;">{{ item.industry_name|default:item.industry_slug }} ({{ item.score }})</div>
+                {% empty %}-{% endfor %}
               </td>
             </tr>
           {% endfor %}
@@ -135,41 +91,13 @@
   <div class="module" style="margin-top:16px;">
     <h2>Anonymous Popularity - Top Products</h2>
     {% if anonymous_summary.top_products %}
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Product</th>
-<<<<<<< HEAD
-            <th>Power Source</th>
-            <th>Score</th>
-            <th>Event Counts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in summary.top_products %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>
-                {% if item.product_name %}{{ item.product_name }}{% else %}{{ item.product_slug }}{% endif %}
-                <div style="color: #666; font-size: 11px;">ID: {{ item.product_id }}</div>
-              </td>
-              <td>{{ item.power_source_name|default:item.power_source_slug }}</td>
-              <td><strong>{{ item.score }}</strong></td>
-              <td>
-                {% for key, value in item.event_counts.items %}
-                  <span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ddd; border-radius:12px; font-size:11px;">
-                    {{ key }}: {{ value }}
-                  </span>
-                {% empty %}
-                  -
-                {% endfor %}
-              </td>
-=======
-            <th>Popularity Score</th>
-            <th>Clicks</th>
-            <th>Detail Views</th>
+            <th>Unique Clicks</th>
+            <th>Details Views</th>
           </tr>
         </thead>
         <tbody>
@@ -180,60 +108,64 @@
                 {{ item.product_name|default:item.product_slug|default:item.product_id }}
                 <div style="color:#777;font-size:11px;">ID: {{ item.product_id }}</div>
               </td>
-              <td><strong>{{ item.popularity_score }}</strong></td>
-              <td>{{ item.counts.product_clicks|default:0 }}</td>
-              <td>{{ item.counts.detail_views|default:0 }}</td>
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
+              <td>{{ item.unique_counts.product_clicks|default:0 }}</td>
+              <td>{{ item.unique_counts.detail_views|default:0 }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-<<<<<<< HEAD
-      <p>No scored product events in this window.</p>
+      <p>No anonymous product analytics found in this window.</p>
     {% endif %}
   </div>
 
-  <div class="module" style="margin-top: 16px;">
-    <h2>Top Power Sources</h2>
-    {% if summary.top_power_sources %}
-=======
-      <p>No anonymous product analytics found in this window.</p>
+  <div class="module" style="margin-top:16px;">
+    <h2>Logged-in Users - Top Downloaded / Requested Files</h2>
+    {% if logged_in_documents_summary.top_documents %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>User</th>
+            <th>Document</th>
+            <th>Unique Downloads</th>
+            <th>Unique Email Requests</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in logged_in_documents_summary.top_documents %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                <strong>{{ item.user.name|default:item.user.email }}</strong>
+                <div style="color:#666;font-size:11px;">{{ item.user.email }}</div>
+                <div style="color:#777;font-size:11px;">User ID: {{ item.user.id }}</div>
+              </td>
+              <td>
+                {{ item.document_title|default:item.catalogue_id }}
+                <div style="color:#777;font-size:11px;">Catalogue ID: {{ item.catalogue_id }}</div>
+              </td>
+              <td>{{ item.unique_counts.downloads|default:0 }}</td>
+              <td>{{ item.unique_counts.email_requests|default:0 }}</td>
+              <td>{{ item.doc_type }} / {{ item.access_type }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No logged-in document analytics found in this window.</p>
     {% endif %}
   </div>
 
   <div class="module" style="margin-top:16px;">
     <h2>Anonymous Popularity - Top Downloaded / Requested Files</h2>
     {% if anonymous_summary.top_documents %}
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
       <table>
         <thead>
           <tr>
             <th>#</th>
-<<<<<<< HEAD
-            <th>Power Source</th>
-            <th>Score</th>
-            <th>Event Counts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in summary.top_power_sources %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>{{ item.power_source_name|default:item.power_source_slug }}</td>
-              <td><strong>{{ item.score }}</strong></td>
-              <td>
-                {% for key, value in item.event_counts.items %}
-                  <span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ddd; border-radius:12px; font-size:11px;">
-                    {{ key }}: {{ value }}
-                  </span>
-                {% empty %}
-                  -
-                {% endfor %}
-              </td>
-=======
             <th>Document</th>
-            <th>Popularity Score</th>
             <th>Downloads</th>
             <th>Email Requests</th>
             <th>Type</th>
@@ -247,32 +179,29 @@
                 {{ item.document_title|default:item.catalogue_id }}
                 <div style="color:#777;font-size:11px;">Catalogue ID: {{ item.catalogue_id }}</div>
               </td>
-              <td><strong>{{ item.popularity_score }}</strong></td>
-              <td>{{ item.counts.downloads|default:0 }}</td>
-              <td>{{ item.counts.email_requests|default:0 }}</td>
+              <td>{{ item.unique_counts.downloads|default:0 }}</td>
+              <td>{{ item.unique_counts.email_requests|default:0 }}</td>
               <td>{{ item.doc_type }} / {{ item.access_type }}</td>
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
             </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-<<<<<<< HEAD
-      <p>No scored power-source events in this window.</p>
+      <p>No anonymous document analytics found in this window.</p>
     {% endif %}
   </div>
 
-  <div class="module" style="margin-top: 16px;">
-    <h2>Current Scoring Weights</h2>
+  <div class="module" style="margin-top:16px;">
+    <h2>Scoring Weights (Logged-in Users)</h2>
     <table>
       <thead>
         <tr>
-          <th>Rule</th>
+          <th>Signal</th>
           <th>Points</th>
         </tr>
       </thead>
       <tbody>
-        {% for key, value in summary.weights.items %}
+        {% for key, value in user_summary.weights.items %}
           <tr>
             <td>{{ key }}</td>
             <td>{{ value }}</td>
@@ -281,10 +210,5 @@
       </tbody>
     </table>
   </div>
-=======
-      <p>No anonymous document analytics found in this window.</p>
-    {% endif %}
-  </div>
->>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 </div>
 {% endblock %}
