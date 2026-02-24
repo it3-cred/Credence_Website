@@ -1,6 +1,11 @@
 "use client";
 
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
+=======
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -54,8 +59,12 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const [thrustMin, setThrustMin] = useState("");
   const [thrustMax, setThrustMax] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+<<<<<<< HEAD
   const filterTrackTimeoutRef = useRef(null);
   const lastFilterTrackRef = useRef("");
+=======
+  const lastFilterTrackSignatureRef = useRef("");
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
   useEffect(() => {
     setSelectedPowerSource(initialPowerSourceSlug || "");
@@ -242,6 +251,47 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
     setThrustMax("");
   };
 
+  useEffect(() => {
+    if (isLoading || error) return undefined;
+
+    const normalizedTorque = normalizeTorqueBounds(torqueMin, torqueMax);
+    const normalizedThrust = normalizeTorqueBounds(thrustMin, thrustMax);
+    const payload = {
+      page: "products",
+      power_source_slug: selectedPowerSource || null,
+      power_source_name: powerSources.find((item) => item.slug === selectedPowerSource)?.name || "",
+      industries: selectedIndustries,
+      torque_min: normalizedTorque.min ? Number(normalizedTorque.min) : null,
+      torque_max: normalizedTorque.max ? Number(normalizedTorque.max) : null,
+      thrust_min: normalizedThrust.min ? Number(normalizedThrust.min) : null,
+      thrust_max: normalizedThrust.max ? Number(normalizedThrust.max) : null,
+      results_count: products.length,
+    };
+
+    const signature = JSON.stringify(payload);
+    if (signature === lastFilterTrackSignatureRef.current) return undefined;
+
+    const timerId = window.setTimeout(() => {
+      if (signature !== lastFilterTrackSignatureRef.current) {
+        trackEvent("product_filters_applied", payload);
+        lastFilterTrackSignatureRef.current = signature;
+      }
+    }, 600);
+
+    return () => window.clearTimeout(timerId);
+  }, [
+    isLoading,
+    error,
+    selectedPowerSource,
+    selectedIndustries,
+    torqueMin,
+    torqueMax,
+    thrustMin,
+    thrustMax,
+    products.length,
+    powerSources,
+  ]);
+
   return (
     <>
       <Navbar />
@@ -410,7 +460,12 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                         product_id: product.id,
                         product_slug: product.slug || "",
                         product_name: product.name || "",
+<<<<<<< HEAD
                         power_source_slug: product.power_source?.slug || null,
+=======
+                        power_source_slug: product.power_source?.slug || selectedPowerSource || "",
+                        power_source_name: product.power_source?.name || "",
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                         source_section: "products_grid",
                         position: index + 1,
                       })

@@ -4,6 +4,7 @@ import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
 const ANON_ID_KEY = "cred_anon_id";
 const SESSION_ID_KEY = "cred_session_id";
+<<<<<<< HEAD
 const CONSENT_PREFERENCES_KEY = "cred_consent_preferences";
 const ANALYTICS_CONSENT_KEY = "cred_analytics_consent";
 const MAX_BATCH_SIZE = 20;
@@ -32,11 +33,22 @@ const DEFAULT_CONSENT_PREFERENCES = {
   preferences: null,
   marketing: null,
 };
+=======
+const FLUSH_INTERVAL_MS = 5000;
+const MAX_BATCH_SIZE = 20;
+
+let queue = [];
+let flushTimer = null;
+let initialized = false;
+let flushing = false;
+let lastPath = "";
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
 function hasWindow() {
   return typeof window !== "undefined";
 }
 
+<<<<<<< HEAD
 function normalizeConsentPreferences(input = {}) {
   return {
     necessary: true,
@@ -78,20 +90,39 @@ function writeConsentPreferences(preferences) {
 function randomId(prefix) {
   const rand = Math.random().toString(36).slice(2, 10);
   return `${prefix}_${Date.now()}_${rand}`;
+=======
+function randomId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getStorageValue(storage, key, prefix) {
+  if (!hasWindow()) return "";
+  let value = storage.getItem(key);
+  if (!value) {
+    value = randomId(prefix);
+    storage.setItem(key, value);
+  }
+  return value;
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 }
 
 export function getAnonId() {
   if (!hasWindow()) return "";
+<<<<<<< HEAD
   let value = window.localStorage.getItem(ANON_ID_KEY);
   if (!value) {
     value = randomId("anon");
     window.localStorage.setItem(ANON_ID_KEY, value);
   }
   return value;
+=======
+  return getStorageValue(window.localStorage, ANON_ID_KEY, "anon");
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 }
 
 export function getSessionId() {
   if (!hasWindow()) return "";
+<<<<<<< HEAD
   let value = window.sessionStorage.getItem(SESSION_ID_KEY);
   if (!value) {
     value = randomId("sess");
@@ -101,15 +132,29 @@ export function getSessionId() {
 }
 
 function getCurrentPath() {
+=======
+  return getStorageValue(window.sessionStorage, SESSION_ID_KEY, "sess");
+}
+
+function currentPath() {
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
   if (!hasWindow()) return "";
   return `${window.location.pathname}${window.location.search}`;
 }
 
+<<<<<<< HEAD
 function getReferrerPath() {
   if (!hasWindow()) return null;
   if (lastInternalPath) return lastInternalPath;
   const ref = document.referrer || "";
   if (!ref) return null;
+=======
+function currentReferrer() {
+  if (!hasWindow()) return "";
+  if (lastPath) return lastPath;
+  const ref = document.referrer || "";
+  if (!ref) return "";
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
   try {
     const refUrl = new URL(ref);
     if (refUrl.origin === window.location.origin) {
@@ -121,6 +166,7 @@ function getReferrerPath() {
   }
 }
 
+<<<<<<< HEAD
 function setLastInternalPath(path) {
   lastInternalPath = path || "";
 }
@@ -181,17 +227,30 @@ async function flushEvents() {
   addDebugLog("flush", `Flushing ${batch.length} event(s)`, {
     batch: batch.map(eventPreview),
   });
+=======
+async function flushEvents() {
+  if (!hasWindow() || flushing || queue.length === 0) return;
+  flushing = true;
+  const batch = queue.slice(0, MAX_BATCH_SIZE);
+
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
   try {
     const response = await fetch(apiUrl(API_ENDPOINTS.analyticsEvents), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+<<<<<<< HEAD
       body: JSON.stringify({ events: batch }),
       keepalive: true,
+=======
+      keepalive: true,
+      body: JSON.stringify({ events: batch }),
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     });
     if (!response.ok) {
       throw new Error(`Analytics ingest failed (${response.status})`);
     }
+<<<<<<< HEAD
     eventQueue = eventQueue.slice(batch.length);
     debugStats.sentBatches += 1;
     debugStats.sentEvents += batch.length;
@@ -223,16 +282,39 @@ function initializeAnalytics() {
   isInitialized = true;
   scheduleFlush();
   setLastInternalPath(getCurrentPath());
+=======
+    queue = queue.slice(batch.length);
+  } catch {
+    // Keep queue in memory for retry.
+  } finally {
+    flushing = false;
+  }
+}
+
+function init() {
+  if (!hasWindow() || initialized) return;
+  initialized = true;
+  lastPath = currentPath();
+
+  flushTimer = window.setInterval(() => {
+    flushEvents();
+  }, FLUSH_INTERVAL_MS);
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       flushEvents();
+<<<<<<< HEAD
       setLastInternalPath(getCurrentPath());
+=======
+      lastPath = currentPath();
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     }
   });
 
   window.addEventListener("pagehide", () => {
     flushEvents();
+<<<<<<< HEAD
     setLastInternalPath(getCurrentPath());
   });
 }
@@ -248,12 +330,25 @@ export function trackEvent(eventName, properties = {}, options = {}) {
 
   const pagePath = getCurrentPath();
   const payload = {
+=======
+    lastPath = currentPath();
+  });
+}
+
+export function trackEvent(eventName, properties = {}) {
+  if (!hasWindow()) return;
+  init();
+
+  const pagePath = currentPath();
+  queue.push({
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     event_name: eventName,
     event_time: new Date().toISOString(),
     session_id: getSessionId(),
     anon_id: getAnonId(),
     page_path: pagePath,
     page_title: document.title || "",
+<<<<<<< HEAD
     referrer: getReferrerPath(),
     properties,
   };
@@ -268,11 +363,22 @@ export function trackEvent(eventName, properties = {}, options = {}) {
     flushEvents();
   }
   setLastInternalPath(pagePath);
+=======
+    referrer: currentReferrer(),
+    properties,
+  });
+
+  if (queue.length >= MAX_BATCH_SIZE) {
+    flushEvents();
+  }
+  lastPath = pagePath;
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 }
 
 export function flushAnalyticsEvents() {
   return flushEvents();
 }
+<<<<<<< HEAD
 
 export function getAnalyticsDebugSnapshot() {
   return {
@@ -372,3 +478,5 @@ export function subscribeConsentPreferences(listener) {
 export function getConsentCategories() {
   return [...CONSENT_CATEGORIES];
 }
+=======
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)

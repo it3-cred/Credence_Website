@@ -224,6 +224,24 @@ export default function LandingPage() {
     return () => window.clearInterval(intervalId);
   }, [isPaused, slides.length]);
 
+  const handlePowerSourceCardClick = (source) => {
+    trackEvent("power_source_card_click", {
+      source_section: "landing_product_portfolio",
+      power_source_id: source?.id ?? null,
+      power_source_slug: source?.slug || "",
+      power_source_name: source?.name || "",
+    });
+  };
+
+  const handleIndustryCardClick = (industry) => {
+    trackEvent("industry_card_click", {
+      source_section: "landing_industries",
+      industry_id: industry?.id ?? null,
+      industry_slug: industry?.slug || "",
+      industry_name: industry?.name || "",
+    });
+  };
+
   return (
     <>
       <Navbar />
@@ -343,6 +361,7 @@ export default function LandingPage() {
               <Link
                 key={source.id}
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
+<<<<<<< HEAD
                 onClick={() =>
                   trackEvent("power_source_card_click", {
                     source_section: "landing_product_portfolio",
@@ -351,6 +370,9 @@ export default function LandingPage() {
                     power_source_name: source.name || "",
                   })
                 }
+=======
+                onClick={() => handlePowerSourceCardClick(source)}
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                 className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
               >
                 <div className="relative h-56 w-full bg-steel-100 sm:h-64">
@@ -405,6 +427,7 @@ export default function LandingPage() {
               className="industry-marquee-track flex w-max gap-3 sm:gap-4"
               style={{ animationPlayState: isIndustryPaused ? "paused" : "running" }}
             >
+<<<<<<< HEAD
               {industryTrackItems.map((industry, index) => (
                 <article
                   key={`${industry.id}-${index}`}
@@ -418,6 +441,14 @@ export default function LandingPage() {
                   />
                   <h3
                     className={`absolute left-3 top-1/2 max-w-[86%] -translate-y-1/2 text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-[0.95] tracking-tight ${industry.accent}`}
+=======
+                {industryTrackItems.map((industry, index) => (
+                  <Link
+                    key={`${industry.id}-${index}`}
+                    href={industry.slug ? `/products?industries=${encodeURIComponent(industry.slug)}` : "/products"}
+                    onClick={() => handleIndustryCardClick(industry)}
+                    className="relative block w-[78vw] max-w-70 shrink-0 overflow-hidden rounded-xl border border-brand-200"
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                   >
                     {industry.name}
                   </h3>

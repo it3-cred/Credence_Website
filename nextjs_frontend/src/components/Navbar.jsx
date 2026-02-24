@@ -133,6 +133,11 @@ export default function Navbar() {
       page_context: "global",
       product_id: null,
       product_slug: null,
+<<<<<<< HEAD
+=======
+      power_source_slug: null,
+      power_source_name: null,
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
     });
   };
 

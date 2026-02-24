@@ -51,9 +51,16 @@ export default function ProductDetails({ slugAndId = "" }) {
   const [requestSubmitting, setRequestSubmitting] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [requestError, setRequestError] = useState("");
+<<<<<<< HEAD
   const trackedViewRef = useRef("");
   const activeSecondsRef = useRef(0);
   const activeStartedAtRef = useRef(null);
+=======
+  const activeTabRef = useRef(TABS.features);
+  const engagementStartRef = useRef(null);
+  const engagementAccumulatedMsRef = useRef(0);
+  const engagementFlushedRef = useRef(false);
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
   const maxScrollPercentRef = useRef(0);
 
   useEffect(() => {
@@ -92,6 +99,18 @@ export default function ProductDetails({ slugAndId = "" }) {
   }, [parsed.id, parsed.slug]);
 
   useEffect(() => {
+    if (!product?.id) return;
+    trackEvent("product_detail_view", {
+      product_id: product.id,
+      product_slug: product.slug || "",
+      product_name: product.name || "",
+      power_source_slug: product.power_source?.slug || "",
+      power_source_name: product.power_source?.name || "",
+      industry_slugs: Array.isArray(product.industries) ? product.industries.map((i) => i.slug).filter(Boolean) : [],
+    });
+  }, [product?.id]);
+
+  useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
 
@@ -128,6 +147,98 @@ export default function ProductDetails({ slugAndId = "" }) {
     };
   }, [product?.id, product?.power_source?.slug]);
 
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!product?.id) return undefined;
+
+    engagementAccumulatedMsRef.current = 0;
+    engagementFlushedRef.current = false;
+    maxScrollPercentRef.current = 0;
+
+    const isActiveWindow = () =>
+      typeof document !== "undefined" &&
+      document.visibilityState === "visible" &&
+      typeof document.hasFocus === "function" &&
+      document.hasFocus();
+
+    const startTimer = () => {
+      if (engagementFlushedRef.current) return;
+      if (engagementStartRef.current !== null) return;
+      if (!isActiveWindow()) return;
+      engagementStartRef.current = Date.now();
+    };
+
+    const stopTimer = () => {
+      if (engagementStartRef.current === null) return;
+      engagementAccumulatedMsRef.current += Math.max(0, Date.now() - engagementStartRef.current);
+      engagementStartRef.current = null;
+    };
+
+    const updateScrollDepth = () => {
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop || 0;
+      const scrollable = Math.max(doc.scrollHeight - window.innerHeight, 0);
+      const percent = scrollable <= 0 ? 100 : Math.min(100, Math.round((scrollTop / scrollable) * 100));
+      if (percent > maxScrollPercentRef.current) {
+        maxScrollPercentRef.current = percent;
+      }
+    };
+
+    const flushEngagement = () => {
+      if (engagementFlushedRef.current || !product?.id) return;
+      stopTimer();
+      const activeSeconds = Math.floor(engagementAccumulatedMsRef.current / 1000);
+      if (activeSeconds <= 0) {
+        engagementFlushedRef.current = true;
+        return;
+      }
+      trackEvent("page_engagement", {
+        page_type: "product_detail",
+        product_id: product.id,
+        product_slug: product.slug || "",
+        product_name: product.name || "",
+        power_source_slug: product.power_source?.slug || "",
+        power_source_name: product.power_source?.name || "",
+        active_seconds: activeSeconds,
+        max_scroll_percent: maxScrollPercentRef.current,
+        last_active_tab: activeTabRef.current,
+      });
+      engagementFlushedRef.current = true;
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    };
+
+    const onBlur = () => stopTimer();
+    const onFocus = () => startTimer();
+    const onPageHide = () => flushEngagement();
+
+    updateScrollDepth();
+    startTimer();
+    window.addEventListener("scroll", updateScrollDepth, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollDepth);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", onPageHide);
+      flushEngagement();
+    };
+  }, [product?.id]);
+
   const imageUrls = product?.image_urls?.length ? product.image_urls : [product?.image_url || FALLBACK_IMAGE];
   const features = Array.isArray(product?.features) ? product.features : [];
   const specifications =
@@ -158,6 +269,12 @@ export default function ProductDetails({ slugAndId = "" }) {
     trackEvent("document_email_request_open", {
       product_id: product?.id ?? null,
       product_slug: product?.slug || "",
+<<<<<<< HEAD
+=======
+      product_name: product?.name || "",
+      power_source_slug: product?.power_source?.slug || "",
+      power_source_name: product?.power_source?.name || "",
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
       catalogue_id: document?.id ?? null,
       document_title: document?.title || "",
       doc_type: document?.doc_type || "",
@@ -206,10 +323,20 @@ export default function ProductDetails({ slugAndId = "" }) {
       trackEvent("document_email_request_submit", {
         product_id: product?.id ?? null,
         product_slug: product?.slug || "",
+<<<<<<< HEAD
         catalogue_id: selectedDocument?.id ?? null,
         document_title: selectedDocument?.title || "",
         doc_type: selectedDocument?.doc_type || "",
         access_type: selectedDocument?.access_type || "",
+=======
+        product_name: product?.name || "",
+        power_source_slug: product?.power_source?.slug || "",
+        power_source_name: product?.power_source?.name || "",
+        catalogue_id: selectedDocument.id,
+        document_title: selectedDocument.title || "",
+        doc_type: selectedDocument.doc_type || "",
+        access_type: selectedDocument.access_type || "",
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         has_company_name: Boolean(requestCompany.trim()),
       });
       setTimeout(() => {
@@ -219,7 +346,11 @@ export default function ProductDetails({ slugAndId = "" }) {
       trackEvent("document_email_request_submit_failed", {
         product_id: product?.id ?? null,
         product_slug: product?.slug || "",
+<<<<<<< HEAD
         catalogue_id: selectedDocument?.id ?? null,
+=======
+        catalogue_id: selectedDocument.id,
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
         error_type: "request_submit_failed",
       });
       setRequestError(submitError.message || "Failed to submit request.");
@@ -238,6 +369,7 @@ export default function ProductDetails({ slugAndId = "" }) {
     }
   }, [documentTypes, activeDocumentType]);
 
+<<<<<<< HEAD
   useEffect(() => {
     if (!product?.id) return;
     const signature = `${product.id}:${product.slug || ""}`;
@@ -324,6 +456,20 @@ export default function ProductDetails({ slugAndId = "" }) {
       window.removeEventListener("pagehide", flushEngagement);
     };
   }, [product?.id, product?.slug]);
+=======
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    if (!product?.id) return;
+    trackEvent("product_detail_tab_click", {
+      product_id: product.id,
+      product_slug: product.slug || "",
+      product_name: product.name || "",
+      power_source_slug: product.power_source?.slug || "",
+      power_source_name: product.power_source?.name || "",
+      tab,
+    });
+  };
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
 
   return (
     <>
@@ -413,6 +559,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                 <div className="flex flex-wrap border-b border-steel-300 bg-white">
                   <button
                     type="button"
+<<<<<<< HEAD
                     onClick={() => {
                       setActiveTab(TABS.features);
                       if (product?.id) {
@@ -423,6 +570,9 @@ export default function ProductDetails({ slugAndId = "" }) {
                         });
                       }
                     }}
+=======
+                    onClick={() => handleTabClick(TABS.features)}
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.features ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -436,6 +586,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
+<<<<<<< HEAD
                     onClick={() => {
                       setActiveTab(TABS.specifications);
                       if (product?.id) {
@@ -446,6 +597,9 @@ export default function ProductDetails({ slugAndId = "" }) {
                         });
                       }
                     }}
+=======
+                    onClick={() => handleTabClick(TABS.specifications)}
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.specifications ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -459,6 +613,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                   <button
                     type="button"
+<<<<<<< HEAD
                     onClick={() => {
                       setActiveTab(TABS.documents);
                       if (product?.id) {
@@ -469,6 +624,9 @@ export default function ProductDetails({ slugAndId = "" }) {
                         });
                       }
                     }}
+=======
+                    onClick={() => handleTabClick(TABS.documents)}
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                     className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
                       activeTab === TABS.documents ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
                     }`}
@@ -583,11 +741,21 @@ export default function ProductDetails({ slugAndId = "" }) {
                                       trackEvent("document_download_click", {
                                         product_id: product?.id ?? null,
                                         product_slug: product?.slug || "",
+<<<<<<< HEAD
                                         catalogue_id: document.id,
                                         document_title: document.title || "",
                                         doc_type: document.doc_type || "",
                                         access_type: "DIRECT",
                                         document_tab_category: document.doc_type || "",
+=======
+                                        product_name: product?.name || "",
+                                        power_source_slug: product?.power_source?.slug || "",
+                                        power_source_name: product?.power_source?.name || "",
+                                        catalogue_id: document.id,
+                                        document_title: document.title || "",
+                                        doc_type: document.doc_type || "",
+                                        access_type: document.access_type || "",
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                                       })
                                     }
                                     className="rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-500 hover:text-white"
@@ -626,7 +794,12 @@ export default function ProductDetails({ slugAndId = "" }) {
                             product_id: item.id,
                             product_slug: item.slug || "",
                             product_name: item.name || "",
+<<<<<<< HEAD
                             power_source_slug: item.power_source?.slug || null,
+=======
+                            power_source_slug: item.power_source?.slug || product?.power_source?.slug || "",
+                            power_source_name: item.power_source?.name || product?.power_source?.name || "",
+>>>>>>> 27b5e44 (added analytics for logedin user and anonyms user)
                             source_section: "similar_products",
                             position: index + 1,
                           })
