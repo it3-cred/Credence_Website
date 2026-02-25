@@ -528,7 +528,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                           {features.map((feature, index) => (
                             <li
                               key={`${index}-${String(feature)}`}
-                              className="flex items-start gap-2 border border-steel-200 bg-steel-50 px-3 py-2.5 text-sm text-steel-700"
+                              className="flex items-center gap-2 border border-steel-200 bg-steel-50 px-3 py-2.5 text-sm text-steel-700"
                             >
                               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                               <span>{typeof feature === "string" ? feature : JSON.stringify(feature)}</span>

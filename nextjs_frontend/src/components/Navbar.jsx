@@ -261,16 +261,16 @@ function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-2.5 min-[1200px]:flex">
-          <div className="flex items-center rounded-xl border border-steel-200 bg-steel-50/70 p-1 transition duration-300">
+          <div className="flex items-center rounded-xl  p-1 transition duration-300">
             <button
               type="button"
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-zinc-700 transition duration-200 hover:bg-white hover:text-brand-600"
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border border-steel-200 bg-white rounded-lg text-zinc-700 transition duration-200 hover:bg-steel-50/70 hover:text-brand-600"
               onClick={() => setIsDesktopSearchOpen((prev) => !prev)}
               aria-expanded={isDesktopSearchOpen}
               aria-label="Toggle desktop search"
             >
               <svg
-                className="h-4 w-4"
+                className="h-3 w-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
