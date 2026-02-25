@@ -56,6 +56,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const [thrustMin, setThrustMin] = useState("");
   const [thrustMax, setThrustMax] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("featured");
   const lastFilterTrackSignatureRef = useRef("");
 
   useEffect(() => {
@@ -194,6 +195,23 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
     return chips;
   }, [selectedPowerSourceName, selectedIndustries, industries, torqueMin, torqueMax, thrustMin, thrustMax]);
 
+  const sortedProducts = useMemo(() => {
+    const items = [...products];
+    if (sortBy === "name_asc") {
+      items.sort((a, b) => (a?.name || "").localeCompare(b?.name || ""));
+      return items;
+    }
+    if (sortBy === "name_desc") {
+      items.sort((a, b) => (b?.name || "").localeCompare(a?.name || ""));
+      return items;
+    }
+    if (sortBy === "latest") {
+      items.sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime());
+      return items;
+    }
+    return items;
+  }, [products, sortBy]);
+
   const handlePowerSourceSelect = (slug) => {
     setSelectedPowerSource(slug);
   };
@@ -260,7 +278,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
       <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-steel-200 pb-5">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-steel-200 pb-2">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-700">Product Catalogue</p>
               <h1 className="text-3xl font-bold tracking-tight text-steel-900 sm:text-4xl">Products</h1>
@@ -278,11 +296,14 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
             <span className="shrink-0 text-xs font-semibold uppercase tracking-widest text-steel-700">
               Filters
             </span>
-            <div className="min-w-0 flex-1 overflow-x-auto">
+            <div className="scrollbar-hide min-w-0 flex-1 overflow-x-auto">
               {appliedFilters.length ? (
                 <div className="inline-flex items-center gap-2 whitespace-nowrap">
                   {appliedFilters.map((chip) => (
-                    <span key={chip.key} className="shrink-0 rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700">
+                    <span
+                      key={chip.key}
+                      className="shrink-0 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs text-brand-700 transition"
+                    >
                       {chip.label}
                     </span>
                   ))}
@@ -295,7 +316,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="shrink-0 rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700 hover:bg-steel-100"
+                className="shrink-0 rounded-full border border-steel-300 bg-white px-3 py-1 text-xs text-steel-700 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
               >
                 Clear
               </button>
@@ -303,17 +324,23 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
           </div>
 
           <div className="mt-6 grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className={`${isFilterOpen ? "block" : "hidden"} rounded-xl border border-steel-200 bg-white p-4 max-lg:max-h-[70vh] max-lg:overflow-y-auto lg:sticky lg:top-24 lg:block lg:h-[calc(100vh-7.5rem)] lg:overflow-y-auto`}>
+            <aside
+              className={`scrollbar-hide block rounded-xl border border-steel-200 bg-white p-4 transition-all duration-300 ease-out max-lg:overflow-hidden lg:sticky lg:top-24 lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto ${
+                isFilterOpen
+                  ? "max-lg:pointer-events-auto max-lg:max-h-[70vh] max-lg:opacity-100 max-lg:translate-y-0 max-lg:p-4 max-lg:border-steel-200"
+                  : "max-lg:pointer-events-none max-lg:max-h-0 max-lg:opacity-0 max-lg:-translate-y-1 max-lg:p-0 max-lg:border-transparent lg:opacity-100 lg:translate-y-0"
+              }`}
+            >
               <h2 className="text-sm font-semibold text-steel-900">Filters</h2>
 
-              <div className="mt-4">
+              <div className="mt-4 border-t border-steel-100 pt-4 first:border-t-0 first:pt-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Power Source</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => handlePowerSourceSelect("")}
                     className={`rounded-md border px-2.5 py-1.5 text-xs ${
-                      !selectedPowerSource ? "border-brand-500 bg-brand-50 text-brand-700" : "border-steel-300 text-steel-700"
+                      !selectedPowerSource ? "border-brand-500 bg-brand-50 text-brand-700" : "border-steel-300 text-steel-700 hover:border-steel-400"
                     }`}
                   >
                     All
@@ -326,7 +353,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                       className={`rounded-md border px-2.5 py-1.5 text-xs ${
                         selectedPowerSource === source.slug
                           ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-steel-300 text-steel-700"
+                          : "border-steel-300 text-steel-700 hover:border-steel-400"
                       }`}
                     >
                       {source.name}
@@ -335,23 +362,38 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-5 border-t border-steel-100 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Industry</p>
-                <div className="mt-2 max-h-44 space-y-2 overflow-auto pr-1">
+                <div className="scrollbar-hide mt-2 max-h-44 space-y-2 overflow-auto pr-1">
                   {industries.map((industry) => (
-                    <label key={industry.id} className="flex items-center gap-2 text-sm text-steel-700">
+                    <label
+                      key={industry.id}
+                      className="group flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 text-sm text-steel-700 transition hover:bg-steel-50"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedIndustries.includes(industry.slug)}
                         onChange={() => toggleIndustry(industry.slug)}
+                        className="peer sr-only"
                       />
-                      <span>{industry.name}</span>
+                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-steel-300 bg-white transition peer-checked:border-brand-500 peer-checked:bg-brand-500 group-hover:border-steel-400">
+                        <svg
+                          viewBox="0 0 16 16"
+                          className="h-3 w-3 text-white opacity-0 transition peer-checked:opacity-100"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M3.5 8 6.5 11 12.5 5" />
+                        </svg>
+                      </span>
+                      <span className="leading-snug">{industry.name}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-5 border-t border-steel-100 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Torque (Nm)</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <input
@@ -362,7 +404,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     value={torqueMin}
                     onChange={(event) => setTorqueMin(event.target.value)}
                     placeholder="Min"
-                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
                   <input
                     id="torque-max-filter"
@@ -372,12 +414,12 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     value={torqueMax}
                     onChange={(event) => setTorqueMax(event.target.value)}
                     placeholder="Max"
-                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-4 border-t border-steel-100 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Thrust (N)</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <input
@@ -388,7 +430,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     value={thrustMin}
                     onChange={(event) => setThrustMin(event.target.value)}
                     placeholder="Min"
-                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
                   <input
                     id="thrust-max-filter"
@@ -398,23 +440,68 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                     value={thrustMax}
                     onChange={(event) => setThrustMax(event.target.value)}
                     placeholder="Max"
-                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   />
                 </div>
               </div>
             </aside>
 
             <div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-steel-200 bg-white px-3 py-2.5">
+                <p className="text-sm font-medium text-steel-700">
+                  {!isLoading && !error ? (
+                    <>
+                      <span className="font-semibold text-steel-900">{sortedProducts.length}</span> products found
+                    </>
+                  ) : (
+                    "Loading catalogue..."
+                  )}
+                </p>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="products-sort" className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-500">
+                    Sort
+                  </label>
+                  <select
+                    id="products-sort"
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value)}
+                    className="rounded-md border border-steel-200 bg-white px-2.5 py-1.5 text-sm text-steel-700 outline-none transition focus:border-brand-500"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="latest">Latest</option>
+                    <option value="name_asc">Name A-Z</option>
+                    <option value="name_desc">Name Z-A</option>
+                  </select>
+                </div>
+              </div>
+
               {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p> : null}
-              {isLoading ? <p className="text-sm text-steel-700">Loading products...</p> : null}
+              {isLoading ? (
+                <div className="mt-1 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`product-skeleton-${index}`}
+                      className="overflow-hidden rounded-xl border border-steel-200 bg-white"
+                    >
+                      <div className="products-skeleton-shimmer h-52 w-full bg-steel-100" />
+                      <div className="space-y-2 p-4">
+                        <div className="products-skeleton-shimmer h-3 w-24 rounded bg-steel-100" />
+                        <div className="products-skeleton-shimmer h-5 w-5/6 rounded bg-steel-100" />
+                        <div className="products-skeleton-shimmer h-4 w-full rounded bg-steel-100" />
+                        <div className="products-skeleton-shimmer h-4 w-4/5 rounded bg-steel-100" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {!isLoading && !error && products.length === 0 ? (
                 <p className="rounded-md border border-steel-200 bg-white px-3 py-2 text-sm text-steel-700">
                   No products found for applied filters.
                 </p>
               ) : null}
 
-              <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {products.map((product, index) => (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {sortedProducts.map((product, index) => (
                   <Link
                     key={product.id}
                     href={`/product/${encodeURIComponent(product.slug || "product")}-${encodeURIComponent(product.id)}`}
@@ -429,24 +516,27 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                         position: index + 1,
                       })
                     }
-                    className="overflow-hidden rounded-xl border border-steel-200 bg-white transition hover:-translate-y-0.5 hover:shadow-sm"
+                    className="products-grid-card group flex h-full flex-col overflow-hidden rounded-xl border border-steel-200 bg-white"
                   >
-                    <div className="relative h-52 w-full bg-steel-100">
+                    <div className="relative h-52 w-full overflow-hidden bg-steel-100">
                       <Image
                         src={product.image_url || FALLBACK_IMAGE}
                         alt={product.name}
                         fill
                         unoptimized
                         sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-                        className="h-full w-full object-cover"
+                        className="products-grid-card-image h-full w-full object-cover"
                       />
+                      <div className="absolute inset-0 bg-linear-to-t from-steel-950/30 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
                     </div>
-                    <div className="space-y-2 p-4">
+                    <div className="flex flex-1 flex-col p-4">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
                         {product.power_source?.name || "Product"}
                       </p>
-                      <h2 className="text-lg font-semibold leading-tight text-steel-900">{product.name}</h2>
-                      <p className="overflow-hidden text-sm leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                      <h2 className="mt-1 text-lg font-semibold leading-tight tracking-tight text-steel-900">
+                        {product.name}
+                      </h2>
+                      <p className="mt-2 overflow-hidden text-sm leading-relaxed text-steel-600 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
                         {product.short_summary || "No summary available."}
                       </p>
                     </div>

@@ -3,6 +3,7 @@
 import { memo, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
 ];
 
 function Navbar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
@@ -142,10 +144,16 @@ function Navbar() {
   const hasRibbon = !isRibbonClosed && announcements.length > 0;
   const hasMultipleAnnouncements = announcements.length > 1;
   const latestAnnouncement = announcements[0] || null;
+
+  const isActiveNavItem = (href) => {
+    if (!href || !href.startsWith("/") || !pathname) return false;
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
   return (
-    <header className="sticky top-0 z-50 border-b border-steel-200 bg-white backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-steel-200/90 bg-white/95 shadow-[0_1px_0_rgba(23,28,34,0.04)] backdrop-blur-md">
       {hasRibbon ? (
-        <div className="border-b border-zinc-200 bg-brand-500 text-white">
+        <div className="border-b border-brand-400/50 bg-brand-500 text-white">
           <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-2 py-2 sm:px-4 lg:px-6">
             <div className="min-w-0 flex-1 overflow-hidden text-center">
               {hasMultipleAnnouncements ? (
@@ -159,7 +167,7 @@ function Navbar() {
                         href={item.link_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block pr-12 text-white underline-offset-4 hover:underline"
+                    className="inline-block pr-12 text-white/95 underline-offset-4 transition hover:text-white hover:underline"
                       >
                         Alert: {text}
                       </a>
@@ -175,7 +183,7 @@ function Navbar() {
                   href={latestAnnouncement.link_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="ribbon-blink inline-block text-xs font-semibold tracking-[0.02em] text-white underline-offset-4 transition hover:underline"
+                  className="ribbon-blink inline-block text-xs font-semibold tracking-[0.02em] text-white underline-offset-4 transition hover:text-white/90 hover:underline"
                 >
                   Alert: {latestAnnouncement.text || latestAnnouncement.message}
                 </a>
@@ -188,7 +196,7 @@ function Navbar() {
             <button
               type="button"
               onClick={() => setIsRibbonClosed(true)}
-              className="inline-flex h-6 w-6 items-center justify-center rounded text-white transition hover:bg-white/15"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-white transition hover:bg-white/15"
               aria-label="Close announcement ribbon"
               title="Close announcement ribbon"
             >
@@ -205,7 +213,7 @@ function Navbar() {
           </div>
         </div>
       ) : null}
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center">
           <Image
             src="/logo.jpg"
@@ -214,7 +222,7 @@ function Navbar() {
             height={40}
             priority
             style={{ width: "auto" }}
-            className="h-9 w-auto sm:h-10"
+            className="h-9 w-auto transition duration-200 sm:h-10"
           />
         </Link>
 
@@ -223,38 +231,46 @@ function Navbar() {
         >
           {navItems.map((item) => (
             <li key={item.label}>
-              {item.href.startsWith("/") ? (
-                <Link
-                  href={item.href}
-                  onClick={() => handleNavClick(item)}
-                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <a
-                  href={item.href}
-                  onClick={() => handleNavClick(item)}
-                  className="text-sm font-medium text-zinc-700 transition ease-in-out hover:text-brand-600"
-                >
-                  {item.label}
-                </a>
-              )}
+              {(() => {
+                const isActive = isActiveNavItem(item.href);
+                const desktopNavClass = `relative rounded-md px-2 py-2 text-sm font-medium transition duration-200 ease-in-out ${
+                  isActive
+                    ? "text-brand-700"
+                    : "text-zinc-700 hover:bg-brand-50 hover:text-brand-700"
+                }`;
+                return item.href.startsWith("/") ? (
+                  <Link
+                    href={item.href}
+                    onClick={() => handleNavClick(item)}
+                    className={desktopNavClass}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={item.href}
+                    onClick={() => handleNavClick(item)}
+                    className={desktopNavClass}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })()}
             </li>
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 min-[1200px]:flex">
-          <div className="flex items-center">
+        <div className="hidden items-center gap-2.5 min-[1200px]:flex">
+          <div className="flex items-center rounded-xl border border-steel-200 bg-steel-50/70 p-1 transition duration-300">
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center cursor-pointer justify-center rounded-md border border-steel-300 text-zinc-800 transition hover:bg-zinc-50"
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-zinc-700 transition duration-200 hover:bg-white hover:text-brand-600"
               onClick={() => setIsDesktopSearchOpen((prev) => !prev)}
               aria-expanded={isDesktopSearchOpen}
               aria-label="Toggle desktop search"
             >
               <svg
-                className="h-4 w-4 text-zinc-600"
+                className="h-4 w-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -265,9 +281,9 @@ function Navbar() {
               </svg>
             </button>
             <div
-              className={`ml-2 overflow-hidden transition-all duration-300 ${isDesktopSearchOpen ? "w-52 opacity-100" : "w-0 opacity-0"}`}
+              className={`overflow-hidden transition-all duration-300 ease-out ${isDesktopSearchOpen ? "ml-1 w-56 opacity-100" : "ml-0 w-0 opacity-0"}`}
             >
-              <div className="flex h-10 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3">
+              <div className="flex h-9 items-center gap-2 rounded-lg border border-steel-200 bg-white px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                 <input
                   type="text"
                   placeholder="Search"
@@ -284,7 +300,7 @@ function Navbar() {
                   event.stopPropagation();
                   setIsUserMenuOpen((prev) => !prev);
                 }}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-steel-200 bg-white text-zinc-700 transition duration-200 hover:border-brand-200 hover:text-brand-600 hover:shadow-sm"
                 aria-label="Open user menu"
                 title="User menu"
               >
@@ -301,19 +317,19 @@ function Navbar() {
               </button>
               {isUserMenuOpen ? (
                 <div
-                  className="absolute right-0 top-12 z-50 w-44 rounded-md border border-zinc-200 bg-white p-1 shadow-lg"
+                  className="absolute right-0 top-12 z-50 w-48 rounded-xl border border-steel-200 bg-white p-1.5 shadow-[0_12px_30px_rgba(23,28,34,0.12)]"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <Link
                     href="/auth"
-                    className="block rounded px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-steel-50"
                   >
                     My Account
                   </Link>
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="block w-full rounded px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                   >
                     Logout
                   </button>
@@ -321,14 +337,14 @@ function Navbar() {
               ) : null}
             </div>
           ) : (
-            <Link href="/auth" className="rounded-md cursor-pointer border border-steel-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50">
+            <Link href="/auth" className="rounded-lg cursor-pointer border border-steel-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-800 transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
               Login
             </Link>
           )}
           <Link
             href="/request-quote"
             onClick={handleRequestQuoteClick}
-            className="rounded-md cursor-pointer bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+            className="rounded-lg cursor-pointer bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(255,35,1,0.18)] transition duration-200 hover:-translate-y-0.5 hover:bg-brand-600 hover:shadow-[0_10px_18px_rgba(255,35,1,0.24)]"
           >
             Request Quote
           </Link>
@@ -337,7 +353,7 @@ function Navbar() {
         <div className="flex items-center gap-1 min-[1200px]:hidden">
           <button
             type="button"
-            className="inline-flex items-center rounded-md p-2 text-zinc-800"
+            className="inline-flex items-center rounded-lg p-2 text-zinc-700 transition hover:bg-steel-100"
             onClick={() => setIsSearchOpen((prev) => !prev)}
             aria-expanded={isSearchOpen}
             aria-label="Toggle search"
@@ -356,7 +372,7 @@ function Navbar() {
 
           <button
             type="button"
-            className="inline-flex items-center rounded-md border border-zinc-300 p-2 text-zinc-800"
+            className="inline-flex items-center rounded-lg border border-steel-200 bg-white p-2 text-zinc-800 transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
             onClick={() => setIsOpen((prev) => !prev)}
             aria-expanded={isOpen}
             aria-label="Toggle navigation menu"
@@ -387,8 +403,8 @@ function Navbar() {
       </nav>
 
       {isSearchOpen && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-3 min-[1200px]:hidden sm:px-6">
-          <div className="flex h-10 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3">
+        <div className="navbar-panel-enter border-t border-steel-200 bg-white/95 px-4 py-3 min-[1200px]:hidden sm:px-6">
+          <div className="flex h-10 items-center gap-2 rounded-xl border border-steel-200 bg-steel-50 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             <svg
               className="h-4 w-4 text-zinc-600"
               viewBox="0 0 24 24"
@@ -409,43 +425,51 @@ function Navbar() {
       )}
 
       {isOpen && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-4 min-[1200px]:hidden sm:px-6">
-          <ul className="flex flex-col gap-3">
+        <div className="navbar-panel-enter border-t border-steel-200 bg-white/95 px-4 py-4 min-[1200px]:hidden sm:px-6">
+          <ul className="flex flex-col gap-2">
             {navItems.map((item) => (
               <li key={item.label}>
-                {item.href.startsWith("/") ? (
-                  <Link
-                    href={item.href}
-                    onClick={() => handleNavClick(item)}
-                    className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <a
-                    href={item.href}
-                    onClick={() => handleNavClick(item)}
-                    className="block rounded-md px-2 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-100"
-                  >
-                    {item.label}
-                  </a>
-                )}
+                {(() => {
+                  const isActive = isActiveNavItem(item.href);
+                  const mobileNavClass = `block rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-brand-50 text-brand-700"
+                      : "text-zinc-800 hover:bg-steel-100 hover:text-brand-700"
+                  }`;
+                  return item.href.startsWith("/") ? (
+                    <Link
+                      href={item.href}
+                      onClick={() => handleNavClick(item)}
+                      className={mobileNavClass}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={item.href}
+                      onClick={() => handleNavClick(item)}
+                      className={mobileNavClass}
+                    >
+                      {item.label}
+                    </a>
+                  );
+                })()}
               </li>
             ))}
           </ul>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {isAuthenticated ? (
               <>
                 <Link
                   href="/auth"
-                  className="inline-flex items-center justify-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+                  className="inline-flex items-center justify-center rounded-lg border border-steel-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 transition hover:bg-steel-50"
                 >
                   My Account
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  className="rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
                 >
                   Logout
                 </button>
@@ -453,7 +477,7 @@ function Navbar() {
             ) : (
               <Link
                 href="/auth"
-                className="rounded-md border border-zinc-300 px-4 py-2 text-center text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+                className="rounded-lg border border-steel-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-zinc-800 transition hover:bg-steel-50"
               >
                 Login / Register
               </Link>
@@ -461,7 +485,7 @@ function Navbar() {
             <Link
               href="/request-quote"
               onClick={handleRequestQuoteClick}
-              className="rounded-md bg-[#FF2300] px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-[#e21f00]"
+              className="rounded-lg bg-brand-500 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_6px_14px_rgba(255,35,1,0.16)] transition hover:bg-brand-600"
             >
               Request Quote
             </Link>
@@ -494,6 +518,20 @@ function Navbar() {
           }
           50% {
             opacity: 0.45;
+          }
+        }
+        .navbar-panel-enter {
+          animation: navbar-panel-fade 220ms ease;
+          transform-origin: top;
+        }
+        @keyframes navbar-panel-fade {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>

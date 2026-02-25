@@ -274,7 +274,7 @@ export default function AuthPage() {
     <>
       <Navbar />
       <main className="bg-steel-50">
-        <section className="mx-auto grid min-h-[calc(100vh-74px)] max-w-[1500px] grid-cols-1 xl:grid-cols-2">
+        <section className="mx-auto grid min-h-[calc(100vh-74px)] max-w-375 grid-cols-1 xl:grid-cols-2">
           <div className="relative hidden overflow-hidden bg-linear-to-br from-steel-900 via-steel-800 to-brand-900 px-12 py-10 xl:flex xl:flex-col xl:justify-between">
             <div
               className="pointer-events-none absolute inset-0 opacity-30"
@@ -292,7 +292,7 @@ export default function AuthPage() {
             </div>
 
             <div className="relative z-10 flex flex-col items-center justify-center">
-              <div className="h-[170px] w-[240px]">
+              <div className="h-42.5 w-60">
                 <svg viewBox="0 0 220 160" width="220" height="160" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="18" y="44" width="14" height="72" rx="2" fill="#2a2926" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
                   <circle cx="25" cy="57" r="4" fill="#1a1916" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
@@ -365,7 +365,7 @@ export default function AuthPage() {
           </div>
 
           <div className="relative bg-white px-6 py-10 sm:px-10 lg:px-14">
-            <div className="mx-auto mt-2 w-full max-w-[540px]">
+            <div className="mx-auto mt-2 w-full max-w-135">
               <div className="mb-8 flex border-b border-steel-200">
                 <button
                   type="button"
@@ -378,7 +378,7 @@ export default function AuthPage() {
                 >
                   Sign in
                   <span
-                    className={`absolute bottom-[-1px] left-0 h-[2px] w-full bg-brand-500 transition ${
+                    className={`absolute bottom-px left-0 h-0.5 w-full bg-brand-500 transition ${
                       activeTab === "login" ? "scale-x-100" : "scale-x-0"
                     } origin-left`}
                   />
@@ -394,7 +394,7 @@ export default function AuthPage() {
                 >
                   Create account
                   <span
-                    className={`absolute bottom-[-1px] left-0 h-[2px] w-full bg-brand-500 transition ${
+                    className={`absolute bottom-px left-0 h-0.5 w-full bg-brand-500 transition ${
                       activeTab === "signup" ? "scale-x-100" : "scale-x-0"
                     } origin-left`}
                   />

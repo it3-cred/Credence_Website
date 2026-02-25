@@ -245,7 +245,7 @@ export default function LandingPage() {
         >
           <div className="absolute inset-0 bg-linear-to-r from-steel-950/78 via-steel-900/38 to-steel-900/8" />
           <div className="relative mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-            <div className="w-[92vw] max-w-[34rem] rounded-xl border border-white/20 bg-steel-950/42 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] backdrop-blur-md sm:rounded-2xl sm:p-6">
+            <div className="w-[92vw] max-w-136 rounded-xl border border-white/20 bg-steel-950/42 p-4 shadow-[0_18px_48px_rgba(0,0,0,0.25)] backdrop-blur-md sm:rounded-2xl sm:p-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70 sm:text-xs">
                 Industrial Automation Solutions
               </p>
@@ -337,9 +337,20 @@ export default function LandingPage() {
                         </p>
                         <Link
                           href={`/${encodeURIComponent(item.model)}/${encodeURIComponent(item.slug || "item")}-${encodeURIComponent(item.id)}`}
-                          className="mt-auto inline-block pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
+                          className="mt-auto inline-flex items-center gap-1.5 pt-3 text-[11px] font-medium text-brand-700 transition hover:text-brand-900 sm:text-xs"
                         >
-                          Read More -{">"}
+                          <span>Read More</span>
+                          <svg
+                            className="h-3.5 w-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            aria-hidden="true"
+                          >
+                            <path d="M5 12h14" />
+                            <path d="m13 5 7 7-7 7" />
+                          </svg>
                         </Link>
                       </article>
                     ))}
@@ -351,39 +362,69 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-steel-100">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-10">
-          <h2 className="text-4xl font-extrabold leading-[0.95] tracking-tight text-steel-900 sm:text-5xl">
-            Product
-            <br />
-            <span className="text-brand-500">Portfolio</span>
-          </h2>
+      <section className="border-y border-steel-200/80 bg-steel-50">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-11">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
+                Core Solutions
+              </p>
+              <h2 className="mt-1 text-4xl font-extrabold leading-[0.95] tracking-tight text-steel-900 sm:text-5xl">
+                Product
+                <br />
+                <span className="text-brand-500">Portfolio</span>
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-relaxed text-steel-600 sm:text-right">
+              Industrial-grade actuator and control solutions designed for reliability, safety,
+              and long service life in demanding operating environments.
+            </p>
+          </div>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {powerSources.map((source) => (
               <Link
                 key={source.id}
                 href={source.slug ? `/products/${encodeURIComponent(source.slug)}` : "/products"}
                 onClick={() => handlePowerSourceCardClick(source)}
-                className="product-portfolio-card overflow-hidden rounded-xl border border-steel-200 bg-white cursor-pointer"
+                className="product-portfolio-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-steel-200/90 bg-white cursor-pointer"
               >
-                <div className="relative h-56 w-full bg-steel-100 sm:h-64">
+                <div className="relative h-52 w-full overflow-hidden bg-steel-100 sm:h-56">
                   <Image
                     src={source.image_url || "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1600&q=80&auto=format&fit=crop"}
                     alt={source.name}
                     fill
                     unoptimized
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="h-full w-full object-cover"
+                    className="product-portfolio-image h-full w-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-linear-to-t from-steel-950/45 via-steel-950/8 to-transparent" />
                 </div>
-                <div className="p-4">
-                  <h3 className="overflow-hidden text-ellipsis text-lg font-semibold leading-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                <div className="flex flex-1 flex-col p-4 sm:p-5">
+                  <h3 className="overflow-hidden text-ellipsis text-lg font-semibold leading-tight tracking-tight text-steel-900 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                     {source.name}
                   </h3>
-                  <p className="mt-2 overflow-hidden text-ellipsis text-sm leading-snug text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                  <p className="mt-2 product-summary-clamp text-sm leading-relaxed text-steel-600">
                     {source.summary}
                   </p>
+                  <div className="mt-4 flex items-center justify-between border-t border-steel-100 pt-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-700">
+                      View Details
+                    </span>
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-steel-200 text-steel-500 transition group-hover:border-brand-200 group-hover:text-brand-600">
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="m13 5 7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

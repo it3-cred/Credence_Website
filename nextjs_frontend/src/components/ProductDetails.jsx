@@ -375,16 +375,16 @@ export default function ProductDetails({ slugAndId = "" }) {
   return (
     <>
       <Navbar />
-      <main className="bg-gray-50">
+      <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-5 text-[0.95rem] text-steel-700">
-            <Link href="/" className="hover:text-brand-600">Home</Link>
+          <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-steel-600">
+            <Link href="/" className="transition hover:text-brand-600">Home</Link>
             <span className="mx-2">/</span>
-            <Link href="/products" className="hover:text-brand-600">Products</Link>
+            <Link href="/products" className="transition hover:text-brand-600">Products</Link>
             {product?.name ? (
               <>
                 <span className="mx-2">/</span>
-                <span className="text-steel-900">{product.name}</span>
+                <span className="font-medium text-steel-900">{product.name}</span>
               </>
             ) : null}
           </div>
@@ -394,26 +394,31 @@ export default function ProductDetails({ slugAndId = "" }) {
 
           {!isLoading && !error && product ? (
             <>
-              <div className="grid gap-6 border-y border-steel-300 py-6 lg:grid-cols-2">
+              <div className="border-y border-steel-200 p-4 sm:p-5 lg:p-6">
+                <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
                 <div className="px-1">
-                  <div className="relative h-88 w-full overflow-hidden rounded-lg border border-steel-300 bg-white shadow-[0_4px_14px_rgba(23,28,34,0.08)] sm:h-104">
+                  <div className="relative h-84 w-full overflow-hidden rounded-xl border border-steel-200 bg-steel-50 sm:h-104">
                     <Image
                       src={imageUrls[activeImage] || FALLBACK_IMAGE}
                       alt={product.name}
                       fill
                       unoptimized
                       sizes="(min-width: 1024px) 50vw, 100vw"
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-contain p-3 transition duration-300"
                     />
                   </div>
                   {imageUrls.length > 1 ? (
-                    <div className="mt-3 flex gap-2 overflow-auto">
+                    <div className="mt-3 flex gap-2 overflow-auto pb-1">
                       {imageUrls.map((url, index) => (
                         <button
                           key={`${url}-${index}`}
                           type="button"
                           onClick={() => setActiveImage(index)}
-                          className={`h-14 w-14 shrink-0 overflow-hidden rounded border ${activeImage === index ? "border-brand-500" : "border-steel-400"}`}
+                          className={`h-15 w-15 shrink-0 overflow-hidden rounded-lg border bg-white transition ${
+                            activeImage === index
+                              ? "border-brand-500 ring-2 ring-brand-100"
+                              : "border-steel-200 hover:border-steel-300"
+                          }`}
                         >
                           <Image
                             src={url}
@@ -429,23 +434,35 @@ export default function ProductDetails({ slugAndId = "" }) {
                   ) : null}
                 </div>
 
-                <div className="px-1 sm:px-2 lg:border-l lg:border-steel-300 lg:pl-6">
-                  <h1 className="text-3xl font-extrabold tracking-tight text-steel-900 sm:text-4xl">{product.name}</h1>
-                  <p className="mt-3 whitespace-pre-line text-base leading-relaxed text-steel-800">{product.description || product.short_summary}</p>
+                <div className="px-1 sm:px-2 lg:border-l lg:border-steel-200 lg:pl-6">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
+                        {product.power_source?.name || "Product"}
+                      </p>
+                      <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-steel-900 sm:text-4xl">
+                        {product.name}
+                      </h1>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 whitespace-pre-line text-[0.98rem] leading-relaxed text-steel-700">
+                    {product.description || product.short_summary}
+                  </p>
 
                   {showPerformanceSection ? (
-                    <div className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+                    <div className="mt-6 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                       {hasTorqueRange ? (
-                        <div className="border-t border-steel-300 pt-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-steel-700">Torque Range</p>
+                        <div className="border border-steel-200 bg-steel-50 px-4 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-steel-600">Torque Range</p>
                           <p className="mt-1 text-base font-bold text-steel-900">
                             {product.torque_min_nm ?? "-"} to {product.torque_max_nm ?? "-"} Nm
                           </p>
                         </div>
                       ) : null}
                       {hasThrustRange ? (
-                        <div className="border-t border-steel-300 pt-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-steel-700">Thrust Range</p>
+                        <div className="border border-steel-200 bg-steel-50 px-4 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-steel-600">Thrust Range</p>
                           <p className="mt-1 text-base font-bold text-steel-900">
                             {product.thrust_min_n ?? "-"} to {product.thrust_max_n ?? "-"} N
                           </p>
@@ -455,14 +472,15 @@ export default function ProductDetails({ slugAndId = "" }) {
                   ) : null}
                 </div>
               </div>
+              </div>
 
-              <div className="mt-8 border-t border-steel-300">
-                <div className="flex flex-wrap border-b border-steel-300 bg-white">
+              <div className="mt-2 border- border-steel-200">
+                <div className="flex flex-wrap gap-1 border-b border-steel-200 p-2">
                   <button
                     type="button"
                     onClick={() => handleTabClick(TABS.features)}
-                    className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
-                      activeTab === TABS.features ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
+                    className={`relative rounded-lg px-4 py-2.5 text-[0.95rem] font-semibold transition-colors ${
+                      activeTab === TABS.features ? "bg-brand-50 text-brand-700" : "text-steel-700 hover:bg-steel-50 hover:text-brand-600"
                     }`}
                   >
                     Features
@@ -475,8 +493,8 @@ export default function ProductDetails({ slugAndId = "" }) {
                   <button
                     type="button"
                     onClick={() => handleTabClick(TABS.specifications)}
-                    className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
-                      activeTab === TABS.specifications ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
+                    className={`relative rounded-lg px-4 py-2.5 text-[0.95rem] font-semibold transition-colors ${
+                      activeTab === TABS.specifications ? "bg-brand-50 text-brand-700" : "text-steel-700 hover:bg-steel-50 hover:text-brand-600"
                     }`}
                   >
                     Specifications
@@ -489,8 +507,8 @@ export default function ProductDetails({ slugAndId = "" }) {
                   <button
                     type="button"
                     onClick={() => handleTabClick(TABS.documents)}
-                    className={`relative px-5 py-3 text-[0.95rem] font-bold transition-colors ${
-                      activeTab === TABS.documents ? "text-brand-700" : "text-steel-700 hover:text-brand-600"
+                    className={`relative rounded-lg px-4 py-2.5 text-[0.95rem] font-semibold transition-colors ${
+                      activeTab === TABS.documents ? "bg-brand-50 text-brand-700" : "text-steel-700 hover:bg-steel-50 hover:text-brand-600"
                     }`}
                   >
                     Documents & Drawings
@@ -502,14 +520,18 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                 </div>
 
-                <div className="py-5 sm:py-6">
+                <div className="p-5 sm:p-6">
                   <div key={activeTab} className="tab-panel-enter">
                     {activeTab === TABS.features ? (
                       features.length ? (
-                        <ul className="list-disc space-y-2 pl-5 text-base text-steel-800">
+                        <ul className="grid gap-2 sm:grid-cols-2">
                           {features.map((feature, index) => (
-                            <li key={`${index}-${String(feature)}`} className="px-1">
-                              {typeof feature === "string" ? feature : JSON.stringify(feature)}
+                            <li
+                              key={`${index}-${String(feature)}`}
+                              className="flex items-start gap-2 border border-steel-200 bg-steel-50 px-3 py-2.5 text-sm text-steel-700"
+                            >
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+                              <span>{typeof feature === "string" ? feature : JSON.stringify(feature)}</span>
                             </li>
                           ))}
                         </ul>
@@ -520,14 +542,14 @@ export default function ProductDetails({ slugAndId = "" }) {
 
                     {activeTab === TABS.specifications ? (
                       specifications.length ? (
-                        <div className="overflow-x-auto rounded-md border border-steel-300 bg-white shadow-[0_2px_10px_rgba(23,28,34,0.06)]">
+                        <div className="overflow-x-auto border border-steel-200 bg-white">
                           <table className="min-w-full border-collapse text-left text-[0.95rem]">
-                            <thead className="bg-steel-100">
+                            <thead className="bg-steel-50">
                               <tr>
-                                <th className="w-65 border-b border-r border-steel-300 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.06em] text-steel-700">
+                                <th className="w-65 border-b border-r border-steel-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.08em] text-steel-600">
                                   Specification
                                 </th>
-                                <th className="border-b border-steel-300 px-4 py-3 text-xs font-bold uppercase tracking-[0.06em] text-steel-700">
+                                <th className="border-b border-steel-200 px-4 py-3 text-xs font-bold uppercase tracking-[0.08em] text-steel-600">
                                   Value
                                 </th>
                               </tr>
@@ -535,7 +557,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                             <tbody>
                               {specifications.map(([key, value], index) => (
                                 <tr key={key} className={index % 2 === 0 ? "bg-white" : "bg-steel-50"}>
-                                  <td className="border-b border-r border-steel-200 px-4 py-3 font-semibold text-steel-700">
+                                  <td className="border-b border-r border-steel-200 px-4 py-3 font-semibold text-steel-700 capitalize">
                                     {key.replaceAll("_", " ")}
                                   </td>
                                   <td className="border-b border-steel-200 px-4 py-3 font-medium text-steel-900">
@@ -554,17 +576,17 @@ export default function ProductDetails({ slugAndId = "" }) {
                     {activeTab === TABS.documents ? (
                       documents.length ? (
                         <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-                          <div className="border-r border-steel-300 pr-4">
+                          <div className="border border-steel-200 bg-steel-50 p-3 lg:h-fit">
                             <ul className="space-y-2">
                               {documentTypes.map((docType) => (
                                 <li key={docType.value}>
                                   <button
                                     type="button"
                                     onClick={() => setActiveDocumentType(docType.value)}
-                                    className={`relative w-full py-2 pl-3 text-left text-sm font-semibold uppercase tracking-[0.06em] ${
+                                    className={`relative w-full rounded-lg py-2 pl-3 pr-2 text-left text-xs font-semibold uppercase tracking-[0.08em] transition ${
                                       activeDocumentType === docType.value
-                                        ? "text-brand-700"
-                                        : "text-steel-600 hover:text-brand-600"
+                                        ? "bg-white text-brand-700 shadow-sm"
+                                        : "text-steel-600 hover:bg-white/80 hover:text-brand-600"
                                     }`}
                                   >
                                     {activeDocumentType === docType.value ? (
@@ -579,10 +601,10 @@ export default function ProductDetails({ slugAndId = "" }) {
 
                           <div className="grid gap-3">
                             {filteredDocuments.map((document) => (
-                              <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-steel-300 bg-white px-3 py-3 shadow-[0_2px_10px_rgba(23,28,34,0.06)] transition hover:shadow-[0_8px_20px_rgba(23,28,34,0.12)]">
+                              <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 border border-steel-200 bg-white px-4 py-3 transition hover:bg-steel-50">
                                 <div>
-                                  <p className="text-base font-bold text-steel-900">{document.title}</p>
-                                  <p className="text-sm text-steel-700">
+                                  <p className="text-base font-semibold tracking-tight text-steel-900">{document.title}</p>
+                                  <p className="text-sm text-steel-600">
                                     {document.doc_type} | {document.access_type}
                                   </p>
                                 </div>
@@ -590,7 +612,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                                   <button
                                     type="button"
                                     onClick={() => openRequestModal(document)}
-                                    className="rounded-md border border-brand-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-50"
+                                    className="rounded-md border border-brand-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-50"
                                   >
                                     Request Via Email
                                   </button>
@@ -612,7 +634,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                                         access_type: document.access_type || "",
                                       })
                                     }
-                                    className="rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-500 hover:text-white"
+                                    className="rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white"
                                   >
                                     Download
                                   </a>
@@ -632,13 +654,13 @@ export default function ProductDetails({ slugAndId = "" }) {
               </div>
 
               {similarProducts.length ? (
-                <div className="mt-10 border-t border-steel-300 pt-6">
-                  <h2 className="text-xl font-bold text-steel-900">Similar Products</h2>
-                  <p className="mt-1 text-sm text-steel-700">
+                <div className="mt-10 border-t border-steel-200 pt-6 sm:pt-7">
+                  <h2 className="text-xl font-bold tracking-tight text-steel-900">Similar Products</h2>
+                  <p className="mt-1 text-sm text-steel-600">
                     Based on power source: <span className="font-semibold">{product?.power_source?.name}</span>
                   </p>
 
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ">
                     {similarProducts.map((item, index) => (
                       <Link
                         key={item.id}
@@ -654,24 +676,24 @@ export default function ProductDetails({ slugAndId = "" }) {
                             position: index + 1,
                           })
                         }
-                        className="overflow-hidden rounded-xl border border-steel-200 bg-white shadow-[0_2px_10px_rgba(23,28,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(23,28,34,0.14)]"
+                        className="group overflow-hidden border border-steel-200 rounded-md bg-white transition duration-200 hover:bg-steel-50"
                       >
-                        <div className="relative h-44 w-full bg-steel-100">
+                        <div className="relative h-44 w-full overflow-hidden bg-steel-100">
                           <Image
                             src={item.image_url || FALLBACK_IMAGE}
                             alt={item.name}
                             fill
                             unoptimized
                             sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                           />
                         </div>
                         <div className="p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
                             {item.power_source?.name || "Product"}
                           </p>
-                          <h3 className="mt-1 text-base font-bold leading-tight text-steel-900">{item.name}</h3>
-                          <p className="mt-2 overflow-hidden text-sm text-steel-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                          <h3 className="mt-1 text-base font-semibold leading-tight tracking-tight text-steel-900">{item.name}</h3>
+                          <p className="mt-2 overflow-hidden text-sm leading-relaxed text-steel-600 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                             {item.short_summary || "No summary available."}
                           </p>
                         </div>
@@ -685,15 +707,21 @@ export default function ProductDetails({ slugAndId = "" }) {
         </section>
       </main>
       {isRequestModalOpen && selectedDocument ? (
-        <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-xl border border-steel-300 bg-white p-5 shadow-lg">
+        <div className="fixed inset-0 z-70 flex items-center justify-center bg-steel-900/45 px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md border border-steel-200 bg-white p-5">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-bold text-steel-900">Request Document Via Email</h3>
-              <button type="button" onClick={closeRequestModal} className="text-steel-500 hover:text-steel-800">
-                X
+              <h3 className="text-lg font-semibold tracking-tight text-steel-900">Request Document Via Email</h3>
+              <button
+                type="button"
+                onClick={closeRequestModal}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-steel-500 transition hover:bg-steel-100 hover:text-steel-800"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M6 18 18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <p className="mt-1 text-sm text-steel-700">{selectedDocument.title}</p>
+            <p className="mt-1 text-sm text-steel-600">{selectedDocument.title}</p>
 
             <form className="mt-4 space-y-3" onSubmit={handleSubmitEmailRequest}>
               <div>
@@ -706,7 +734,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   required
                   value={requestEmail}
                   onChange={(event) => setRequestEmail(event.target.value)}
-                  className="mt-1 w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="mt-1 w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   placeholder="you@company.com"
                 />
               </div>
@@ -720,7 +748,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   type="text"
                   value={requestCompany}
                   onChange={(event) => setRequestCompany(event.target.value)}
-                  className="mt-1 w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="mt-1 w-full rounded-md border border-steel-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                   placeholder="Your company"
                 />
               </div>
@@ -732,14 +760,14 @@ export default function ProductDetails({ slugAndId = "" }) {
                 <button
                   type="button"
                   onClick={closeRequestModal}
-                  className="rounded-md border border-steel-300 px-3 py-2 text-xs font-semibold uppercase text-steel-700 hover:bg-steel-100"
+                  className="rounded-md border border-steel-300 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-steel-700 transition hover:bg-steel-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={requestSubmitting}
-                  className="rounded-md border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-brand-700 hover:bg-brand-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition hover:bg-brand-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {requestSubmitting ? "Submitting..." : "Submit Request"}
                 </button>
