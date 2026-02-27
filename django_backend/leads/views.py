@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,6 +15,20 @@ def _get_client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
+def _enqueue_catalogue_email_dispatch(email_request_id):
+    try:
+        from .tasks import send_catalogue_email_request
+
+        send_catalogue_email_request.delay(email_request_id)
+        return None
+    except Exception as exc:
+        CatalogueEmailRequest.objects.filter(id=email_request_id).update(
+            status=CatalogueEmailRequest.STATUS_FAILED,
+            failure_reason=f"Queue dispatch failed: {str(exc)[:1800]}",
+        )
+        return str(exc)
+
+
 @api_view(["POST"])
 def create_catalogue_email_request(request):
     catalogue_id = request.data.get("catalogue_id")
@@ -25,7 +40,10 @@ def create_catalogue_email_request(request):
     if not email:
         return Response({"detail": "email is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-    catalogue = get_object_or_404(ProductCatalogue.objects.filter(is_visible=True), id=catalogue_id)
+    catalogue = get_object_or_404(
+        ProductCatalogue.objects.filter(is_visible=True).select_related("product"),
+        id=catalogue_id,
+    )
     if catalogue.access_type != ProductCatalogue.ACCESS_EMAIL_VALIDATED:
         return Response(
             {"detail": "This document does not require email validation."},
@@ -35,20 +53,24 @@ def create_catalogue_email_request(request):
     lead_request = CatalogueEmailRequest.objects.create(
         catalogue=catalogue,
         email=email,
+        product_name=(catalogue.product.name if getattr(catalogue, "product", None) else ""),
         company_name=company_name,
         request_ip=_get_client_ip(request),
         status=CatalogueEmailRequest.STATUS_PENDING,
     )
 
+    transaction.on_commit(lambda: _enqueue_catalogue_email_dispatch(lead_request.id))
+
     return Response(
         {
             "id": lead_request.id,
             "catalogue_id": lead_request.catalogue_id,
+            "product_name": lead_request.product_name,
             "email": lead_request.email,
             "company_name": lead_request.company_name,
             "status": lead_request.status,
             "created_at": lead_request.created_at,
-            "message": "Request submitted. Document email dispatch will be processed later.",
+            "message": "Request submitted. Document email dispatch is queued.",
         },
         status=status.HTTP_201_CREATED,
     )

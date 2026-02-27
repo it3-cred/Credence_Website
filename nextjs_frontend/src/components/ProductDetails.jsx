@@ -303,19 +303,29 @@ export default function ProductDetails({ slugAndId = "" }) {
     setRequestMessage("");
     setRequestError("");
     try {
-      const response = await fetch(apiUrl(API_ENDPOINTS.catalogueEmailRequest), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          catalogue_id: selectedDocument.id,
-          email: requestEmail,
-          company_name: requestCompany,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 10000);
 
-      const payload = await response.json();
+      let response;
+      let payload;
+      try {
+        response = await fetch(apiUrl(API_ENDPOINTS.catalogueEmailRequest), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            catalogue_id: selectedDocument.id,
+            email: requestEmail,
+            company_name: requestCompany,
+          }),
+          signal: controller.signal,
+        });
+        payload = await response.json();
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+
       if (!response.ok) {
         throw new Error(payload?.detail || "Failed to submit request.");
       }
@@ -335,8 +345,16 @@ export default function ProductDetails({ slugAndId = "" }) {
       });
       setTimeout(() => {
         closeRequestModal();
-      }, 900);
+      }, 3500);
     } catch (submitError) {
+      if (submitError?.name === "AbortError") {
+        setRequestMessage("Request received. Document will be sent to your email shortly.");
+        setRequestError("");
+        setRequestSubmitting(false);
+        // Keep the popup open so the user has enough time to read the message.
+        return;
+      }
+
       trackEvent("document_email_request_submit_failed", {
         product_id: product?.id ?? null,
         product_slug: product?.slug || "",

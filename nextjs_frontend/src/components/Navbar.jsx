@@ -9,7 +9,7 @@ import { trackEvent } from "@/lib/analytics";
 const navItems = [
   { label: "Products", href: "/products" },
   // { label: "Solutions", href: "#" },
-  { label: "Resources", href: "#" },
+  { label: "About Us", href: "/about" },
   { label: "News", href: "/news" },
   { label: "Distributors", href: "/distributors" },
   { label: "Careers", href: "/careers" },

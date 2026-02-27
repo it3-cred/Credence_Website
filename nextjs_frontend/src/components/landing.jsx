@@ -294,7 +294,7 @@ export default function LandingPage() {
                     Explore Products
                   </Link>
                   <Link
-                    href="/auth"
+                    href="/about"
                     className="inline-flex items-center rounded-md border border-white/55 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-white hover:text-steel-900 sm:text-sm"
                   >
                     Know More About Us

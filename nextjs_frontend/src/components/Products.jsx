@@ -333,7 +333,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
             >
               <h2 className="text-sm font-semibold text-steel-900">Filters</h2>
 
-              <div className="mt-4 border-t border-steel-100 pt-4 first:border-t-0 first:pt-0">
+              <div className="mt-3 border-t border-steel-100 pt-3 first:border-t-0 first:pt-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Power Source</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
@@ -362,7 +362,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-steel-100 pt-4">
+              <div className="mt-4 border-t border-steel-100 pt-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Industry</p>
                 <div className="scrollbar-hide mt-2 max-h-44 space-y-2 overflow-auto pr-1">
                   {industries.map((industry) => (
@@ -393,7 +393,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                 </div>
               </div>
 
-              <div className="mt-5 border-t border-steel-100 pt-4">
+              <div className="mt-4 border-t border-steel-100 pt-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Torque (Nm)</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <input
@@ -419,7 +419,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
                 </div>
               </div>
 
-              <div className="mt-4 border-t border-steel-100 pt-4">
+              <div className="mt-3 border-t border-steel-100 pt-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-steel-600">Thrust (N)</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <input

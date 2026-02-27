@@ -4,10 +4,12 @@ from django.db import models
 
 class CatalogueEmailRequest(models.Model):
     STATUS_PENDING = "PENDING"
+    STATUS_PROCESSING = "PROCESSING"
     STATUS_SENT = "SENT"
     STATUS_FAILED = "FAILED"
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
+        (STATUS_PROCESSING, "Processing"),
         (STATUS_SENT, "Sent"),
         (STATUS_FAILED, "Failed"),
     ]
@@ -18,6 +20,7 @@ class CatalogueEmailRequest(models.Model):
         related_name="email_requests",
     )
     email = models.EmailField()
+    product_name = models.CharField(max_length=200, blank=True, default="")
     company_name = models.CharField(
         max_length=200,
         blank=True,
@@ -26,11 +29,15 @@ class CatalogueEmailRequest(models.Model):
     request_ip = models.GenericIPAddressField(null=True, blank=True)
     request_location = models.JSONField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    attempt_count = models.PositiveSmallIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
+    failure_reason = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "catalogue_email_requests"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.email} -> {self.catalogue_id}"

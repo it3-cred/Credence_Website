@@ -16,7 +16,7 @@ const productLinks = [
 
 const siteLinks = [
   { site: "Home", href: "/" },
-  { site: "About Us", href: "/auth" },
+  { site: "About Us", href: "/about" },
   { site: "Products", href: "/products" },
   { site: "Distributors", href: "/distributors" },
   { site: "Careers", href: "/careers" },
