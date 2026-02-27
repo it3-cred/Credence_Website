@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Bebas_Neue, Montserrat } from "next/font/google";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 
 
@@ -24,7 +26,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${montserrat.variable} ${bebasNeue.variable}`}>
+        <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );

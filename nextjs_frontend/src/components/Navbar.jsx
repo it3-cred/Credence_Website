@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
+import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
 const navItems = [
   { label: "Products", href: "/products" },
@@ -21,33 +22,33 @@ function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authUserName, setAuthUserName] = useState("");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [isRibbonClosed, setIsRibbonClosed] = useState(false);
-
-  const getApiBase = () => {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL)
-      return process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (typeof window !== "undefined")
-      return `${window.location.protocol}//${window.location.hostname}:8000`;
-    return "http://127.0.0.1:8000";
-  };
 
   useEffect(() => {
     let isMounted = true;
 
     const loadMe = async () => {
       try {
-        const response = await fetch(`${getApiBase()}/api/auth/me`, {
+        const response = await fetch(apiUrl(API_ENDPOINTS.authMe), {
           method: "GET",
           credentials: "include",
         });
         const payload = await response.json();
         if (!isMounted) return;
-        setIsAuthenticated(Boolean(payload?.data?.authenticated));
+        const isLoggedIn = Boolean(payload?.data?.authenticated);
+        setIsAuthenticated(isLoggedIn);
+        setAuthUserName(
+          isLoggedIn
+            ? payload?.data?.user?.name || payload?.data?.user?.email || ""
+            : "",
+        );
       } catch (error) {
         if (isMounted) {
           setIsAuthenticated(false);
+          setAuthUserName("");
         }
       }
     };
@@ -66,12 +67,9 @@ function Navbar() {
 
     const loadAnnouncement = async () => {
       try {
-        const response = await fetch(
-          `${getApiBase()}/api/content/announcement-ribbon`,
-          {
-            method: "GET",
-          },
-        );
+        const response = await fetch(apiUrl(API_ENDPOINTS.contentAnnouncementRibbon), {
+          method: "GET",
+        });
         const payload = await response.json();
         if (!isMounted) return;
         const rows = Array.isArray(payload?.results)
@@ -105,10 +103,9 @@ function Navbar() {
     return () => window.removeEventListener("click", closeUserMenu);
   }, []);
 
-
   const handleLogout = async () => {
     try {
-      await fetch(`${getApiBase()}/api/auth/logout`, {
+      await fetch(apiUrl(API_ENDPOINTS.authLogout), {
         method: "POST",
         credentials: "include",
       });
@@ -116,6 +113,7 @@ function Navbar() {
       // Ignore network errors and still reset local auth state.
     }
     setIsAuthenticated(false);
+    setAuthUserName("");
     setIsUserMenuOpen(false);
     window.dispatchEvent(new Event("auth-changed"));
   };
@@ -144,6 +142,7 @@ function Navbar() {
   const hasRibbon = !isRibbonClosed && announcements.length > 0;
   const hasMultipleAnnouncements = announcements.length > 1;
   const latestAnnouncement = announcements[0] || null;
+  const menuUserLabel = authUserName || "My Account";
 
   const isActiveNavItem = (href) => {
     if (!href || !href.startsWith("/") || !pathname) return false;
@@ -167,7 +166,7 @@ function Navbar() {
                         href={item.link_url}
                         target="_blank"
                         rel="noreferrer"
-                    className="inline-block pr-12 text-white/95 underline-offset-4 transition hover:text-white hover:underline"
+                        className="inline-block pr-12 text-white/95 underline-offset-4 transition hover:text-white hover:underline"
                       >
                         Alert: {text}
                       </a>
@@ -189,7 +188,8 @@ function Navbar() {
                 </a>
               ) : (
                 <p className="ribbon-blink text-xs font-semibold tracking-[0.02em] text-white">
-                  Alert: {latestAnnouncement?.text || latestAnnouncement?.message}
+                  Alert:{" "}
+                  {latestAnnouncement?.text || latestAnnouncement?.message}
                 </p>
               )}
             </div>
@@ -320,12 +320,14 @@ function Navbar() {
                   className="absolute right-0 top-12 z-50 w-48 rounded-xl border border-steel-200 bg-white p-1.5 shadow-[0_12px_30px_rgba(23,28,34,0.12)]"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <Link
-                    href="/auth"
-                    className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-steel-50"
+                  <div
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700"
+                    title={menuUserLabel}
                   >
-                    My Account
-                  </Link>
+                    <span className="block max-w-[10.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                      {menuUserLabel}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -337,7 +339,10 @@ function Navbar() {
               ) : null}
             </div>
           ) : (
-            <Link href="/auth" className="rounded-lg cursor-pointer border border-steel-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-800 transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700">
+            <Link
+              href="/auth"
+              className="rounded-lg cursor-pointer border border-steel-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-800 transition duration-200 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+            >
               Login
             </Link>
           )}
@@ -460,12 +465,11 @@ function Navbar() {
           <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {isAuthenticated ? (
               <>
-                <Link
-                  href="/auth"
-                  className="inline-flex items-center justify-center rounded-lg border border-steel-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 transition hover:bg-steel-50"
-                >
-                  My Account
-                </Link>
+                <div className="inline-flex items-center justify-center rounded-lg border border-steel-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 transition hover:bg-steel-50">
+                  <span className="max-w-[11rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                    {menuUserLabel}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={handleLogout}

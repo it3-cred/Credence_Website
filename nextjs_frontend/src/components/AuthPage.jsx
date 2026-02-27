@@ -2,14 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
-function getApiBase() {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
-  return "http://127.0.0.1:8000";
-}
+const MIN_PASSWORD_LENGTH = 10;
+const WEAK_PASSWORDS = new Set([
+  "password",
+  "password123",
+  "admin123",
+  "qwerty123",
+  "12345678",
+  "123456789",
+  "1234567890",
+]);
 
 function randomBetween(min, max, decimals = 1) {
   return (Math.random() * (max - min) + min).toFixed(decimals);
@@ -17,11 +21,50 @@ function randomBetween(min, max, decimals = 1) {
 
 function getPasswordScore(value) {
   let score = 0;
-  if (value.length >= 8) score += 1;
-  if (/[A-Z]/.test(value)) score += 1;
+  if (value.length >= MIN_PASSWORD_LENGTH) score += 1;
+  if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score += 1;
   if (/[0-9]/.test(value)) score += 1;
-  if (/[^A-Za-z0-9]/.test(value)) score += 1;
+  if (/[^A-Za-z0-9\s]/.test(value)) score += 1;
   return score;
+}
+
+function validateStrongPassword(password, { name = "", email = "" } = {}) {
+  const value = String(password || "");
+  if (value.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (/\s/.test(value)) {
+    return "Password cannot contain spaces.";
+  }
+  if (!/[a-z]/.test(value)) {
+    return "Password must include at least one lowercase letter.";
+  }
+  if (!/[A-Z]/.test(value)) {
+    return "Password must include at least one uppercase letter.";
+  }
+  if (!/[0-9]/.test(value)) {
+    return "Password must include at least one number.";
+  }
+  if (!/[^A-Za-z0-9\s]/.test(value)) {
+    return "Password must include at least one special character.";
+  }
+
+  const loweredPassword = value.toLowerCase();
+  if (WEAK_PASSWORDS.has(loweredPassword)) {
+    return "This password is too common. Please choose a stronger password.";
+  }
+
+  const emailLocal = String(email || "").split("@")[0].toLowerCase();
+  if (emailLocal && emailLocal.length >= 3 && loweredPassword.includes(emailLocal)) {
+    return "Password should not contain your email username.";
+  }
+
+  const compactName = String(name || "").toLowerCase().replace(/\s+/g, "");
+  if (compactName && compactName.length >= 3 && loweredPassword.includes(compactName)) {
+    return "Password should not contain your name.";
+  }
+
+  return "";
 }
 
 function parseBackendError(payload, fallbackMessage) {
@@ -40,7 +83,7 @@ async function apiPost(path, body, { timeoutMs = 15000 } = {}) {
 
   let response;
   try {
-    response = await fetch(`${getApiBase()}${path}`, {
+    response = await fetch(apiUrl(path), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -100,10 +143,20 @@ export default function AuthPage() {
 
   const [loginAlert, setLoginAlert] = useState({ type: "", message: "" });
   const [signupAlert, setSignupAlert] = useState({ type: "", message: "" });
+  const [forgotAlert, setForgotAlert] = useState({ type: "", message: "" });
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isSignupLoading, setIsSignupLoading] = useState(false);
   const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
   const [isSendingSignupOtp, setIsSendingSignupOtp] = useState(false);
+  const [isSendingForgotOtp, setIsSendingForgotOtp] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotForm, setForgotForm] = useState({
+    email: "",
+    otp: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   useEffect(() => {
     const tick = () => {
@@ -120,11 +173,7 @@ export default function AuthPage() {
   }, []);
 
   const passwordScore = useMemo(() => getPasswordScore(signupForm.password), [signupForm.password]);
-  const strengthClass = useMemo(() => {
-    if (passwordScore <= 2) return "bg-orange-500";
-    if (passwordScore === 3) return "bg-yellow-500";
-    return "bg-emerald-600";
-  }, [passwordScore]);
+  const forgotPasswordScore = useMemo(() => getPasswordScore(forgotForm.newPassword), [forgotForm.newPassword]);
 
   const tabButtonClass = (tab) =>
     `relative pb-3 text-sm font-medium transition ${
@@ -136,7 +185,13 @@ export default function AuthPage() {
       isActive ? "border-brand-500 bg-brand-50 text-brand-700" : "border-steel-200 text-steel-600 hover:bg-steel-50"
     }`;
 
-  const segmentClass = (index) => `h-1 flex-1 rounded-sm ${passwordScore > index ? strengthClass : "bg-steel-200"}`;
+  const strengthClassForScore = (score) => {
+    if (score <= 2) return "bg-orange-500";
+    if (score === 3) return "bg-yellow-500";
+    return "bg-emerald-600";
+  };
+
+  const segmentClass = (score, index) => `h-1 flex-1 rounded-sm ${score > index ? strengthClassForScore(score) : "bg-steel-200"}`;
 
   const alertClass = (type) =>
     type === "success"
@@ -167,7 +222,7 @@ export default function AuthPage() {
           ? { email: loginForm.email, password: loginForm.password }
           : { email: loginForm.email, otp: loginForm.otp };
 
-      await apiPost("/api/auth/login", payload);
+      await apiPost(API_ENDPOINTS.authLogin, payload);
       setLoginAlert({ type: "success", message: "Signed in successfully." });
       window.dispatchEvent(new Event("auth-changed"));
       window.setTimeout(() => router.push("/"), 500);
@@ -192,8 +247,12 @@ export default function AuthPage() {
         setSignupAlert({ type: "error", message: "Password is required." });
         return;
       }
-      if (signupForm.password.length < 8) {
-        setSignupAlert({ type: "error", message: "Password must be at least 8 characters." });
+      const passwordValidationError = validateStrongPassword(signupForm.password, {
+        name: signupForm.name,
+        email: signupForm.email,
+      });
+      if (passwordValidationError) {
+        setSignupAlert({ type: "error", message: passwordValidationError });
         return;
       }
       if (signupForm.password !== signupForm.confirmPassword) {
@@ -222,7 +281,7 @@ export default function AuthPage() {
               otp: signupForm.otp,
             };
 
-      await apiPost("/api/auth/signup", payload);
+      await apiPost(API_ENDPOINTS.authSignup, payload);
       setSignupAlert({ type: "success", message: "Account created successfully." });
       window.dispatchEvent(new Event("auth-changed"));
       window.setTimeout(() => router.push("/"), 500);
@@ -242,7 +301,7 @@ export default function AuthPage() {
       }
       setIsSendingLoginOtp(true);
       try {
-        const result = await apiPost("/api/auth/otp/send", { email: loginForm.email, purpose: "LOGIN" });
+        const result = await apiPost(API_ENDPOINTS.authOtpSend, { email: loginForm.email, purpose: "LOGIN" });
         const debugOtp = result?.data?.otp_debug ? ` (OTP: ${result.data.otp_debug})` : "";
         setLoginAlert({ type: "success", message: `OTP sent to your email.${debugOtp}` });
       } catch (error) {
@@ -260,7 +319,7 @@ export default function AuthPage() {
     }
     setIsSendingSignupOtp(true);
     try {
-      const result = await apiPost("/api/auth/otp/send", { email: signupForm.email, purpose: "SIGNUP" });
+      const result = await apiPost(API_ENDPOINTS.authOtpSend, { email: signupForm.email, purpose: "SIGNUP" });
       const debugOtp = result?.data?.otp_debug ? ` (OTP: ${result.data.otp_debug})` : "";
       setSignupAlert({ type: "success", message: `OTP sent to your email.${debugOtp}` });
     } catch (error) {
@@ -270,9 +329,68 @@ export default function AuthPage() {
     }
   };
 
+  const handleSendForgotOtp = async () => {
+    setForgotAlert({ type: "", message: "" });
+    if (!forgotForm.email) {
+      setForgotAlert({ type: "error", message: "Enter email before requesting OTP." });
+      return;
+    }
+
+    setIsSendingForgotOtp(true);
+    try {
+      const result = await apiPost(API_ENDPOINTS.authPasswordForgot, { email: forgotForm.email });
+      const debugOtp = result?.data?.otp_debug ? ` (OTP: ${result.data.otp_debug})` : "";
+      setForgotAlert({ type: "success", message: `Password reset OTP sent.${debugOtp}` });
+    } catch (error) {
+      setForgotAlert({ type: "error", message: error.message });
+    } finally {
+      setIsSendingForgotOtp(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (event) => {
+    event.preventDefault();
+    setForgotAlert({ type: "", message: "" });
+
+    if (!forgotForm.email || !forgotForm.otp || !forgotForm.newPassword) {
+      setForgotAlert({ type: "error", message: "Email, OTP, and new password are required." });
+      return;
+    }
+
+    const passwordValidationError = validateStrongPassword(forgotForm.newPassword, {
+      email: forgotForm.email,
+    });
+    if (passwordValidationError) {
+      setForgotAlert({ type: "error", message: passwordValidationError });
+      return;
+    }
+
+    if (forgotForm.newPassword !== forgotForm.confirmPassword) {
+      setForgotAlert({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await apiPost(API_ENDPOINTS.authPasswordReset, {
+        email: forgotForm.email,
+        otp: forgotForm.otp,
+        new_password: forgotForm.newPassword,
+      });
+      setForgotAlert({ type: "success", message: "Password updated successfully. Please sign in." });
+      setLoginMethod("password");
+      setLoginForm((prev) => ({ ...prev, email: forgotForm.email, password: "", otp: "" }));
+      setForgotForm((prev) => ({ ...prev, otp: "", newPassword: "", confirmPassword: "" }));
+      window.setTimeout(() => setShowForgotPassword(false), 900);
+    } catch (error) {
+      setForgotAlert({ type: "error", message: error.message });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto grid min-h-[calc(100vh-74px)] max-w-375 grid-cols-1 xl:grid-cols-2">
           <div className="relative hidden overflow-hidden bg-linear-to-br from-steel-900 via-steel-800 to-brand-900 px-12 py-10 xl:flex xl:flex-col xl:justify-between">
@@ -372,8 +490,10 @@ export default function AuthPage() {
                   className={tabButtonClass("login")}
                   onClick={() => {
                     setActiveTab("login");
+                    setShowForgotPassword(false);
                     setLoginAlert({ type: "", message: "" });
                     setSignupAlert({ type: "", message: "" });
+                    setForgotAlert({ type: "", message: "" });
                   }}
                 >
                   Sign in
@@ -388,8 +508,10 @@ export default function AuthPage() {
                   className={`${tabButtonClass("signup")} ml-8`}
                   onClick={() => {
                     setActiveTab("signup");
+                    setShowForgotPassword(false);
                     setLoginAlert({ type: "", message: "" });
                     setSignupAlert({ type: "", message: "" });
+                    setForgotAlert({ type: "", message: "" });
                   }}
                 >
                   Create account
@@ -402,46 +524,26 @@ export default function AuthPage() {
               </div>
 
               {activeTab === "login" ? (
-                <form onSubmit={handleLoginSubmit}>
-                  <div className="mb-6">
-                    <h1 className="font-serif text-5xl leading-none text-steel-900">Welcome back.</h1>
-                    <p className="mt-3 text-sm text-steel-600">Login with password or OTP.</p>
-                  </div>
+                showForgotPassword ? (
+                  <form onSubmit={handleResetPasswordSubmit}>
+                    <div className="mb-6">
+                      <h1 className="font-serif text-5xl leading-none text-steel-900">Reset password.</h1>
+                      <p className="mt-3 text-sm text-steel-600">Request OTP on email, then set a new password.</p>
+                    </div>
 
-                  {loginAlert.message ? <div className={alertClass(loginAlert.type)}>{loginAlert.message}</div> : null}
+                    {forgotAlert.message ? <div className={alertClass(forgotAlert.type)}>{forgotAlert.message}</div> : null}
 
-                  <div className="mb-4">
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Email</label>
-                    <input
-                      type="email"
-                      className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
-                      placeholder="you@company.com"
-                      value={loginForm.email}
-                      onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
-                    />
-                  </div>
-
-                  <div className="mb-4 flex gap-2">
-                    <button type="button" className={methodButtonClass(loginMethod === "password")} onClick={() => setLoginMethod("password")}>
-                      Password
-                    </button>
-                    <button type="button" className={methodButtonClass(loginMethod === "otp")} onClick={() => setLoginMethod("otp")}>
-                      OTP
-                    </button>
-                  </div>
-
-                  {loginMethod === "password" ? (
                     <div className="mb-4">
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Password</label>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Email</label>
                       <input
-                        type="password"
+                        type="email"
                         className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
-                        placeholder="********"
-                        value={loginForm.password}
-                        onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                        placeholder="you@company.com"
+                        value={forgotForm.email}
+                        onChange={(event) => setForgotForm((prev) => ({ ...prev, email: event.target.value }))}
                       />
                     </div>
-                  ) : (
+
                     <div className="mb-4">
                       <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">OTP</label>
                       <div className="flex gap-2">
@@ -449,33 +551,161 @@ export default function AuthPage() {
                           type="text"
                           className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
                           placeholder="6-digit OTP"
-                          value={loginForm.otp}
-                          onChange={(event) => setLoginForm((prev) => ({ ...prev, otp: event.target.value }))}
+                          value={forgotForm.otp}
+                          onChange={(event) => setForgotForm((prev) => ({ ...prev, otp: event.target.value }))}
                         />
                         <button
                           type="button"
-                          onClick={() => handleSendOtp("LOGIN")}
-                          disabled={isSendingLoginOtp}
+                          onClick={handleSendForgotOtp}
+                          disabled={isSendingForgotOtp}
                           className={`rounded-sm px-4 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-white transition ${
-                            isSendingLoginOtp ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                            isSendingForgotOtp ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
                           }`}
                         >
-                          {isSendingLoginOtp ? "Sending..." : "Send OTP"}
+                          {isSendingForgotOtp ? "Sending..." : "Send OTP"}
                         </button>
                       </div>
                     </div>
-                  )}
 
-                  <button
-                    type="submit"
-                    disabled={isLoginLoading}
-                    className={`w-full rounded-sm px-4 py-3 text-sm font-semibold text-white transition ${
-                      isLoginLoading ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
-                    }`}
-                  >
-                    {isLoginLoading ? "Signing in..." : "Sign in"}
-                  </button>
-                </form>
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">New password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                        placeholder={`Min. ${MIN_PASSWORD_LENGTH} chars, mixed case, number, special char`}
+                        value={forgotForm.newPassword}
+                        onChange={(event) => setForgotForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+                      />
+                      <div className="mt-2 flex gap-1">
+                        {[0, 1, 2, 3].map((index) => (
+                          <span key={`forgot-pass-${index}`} className={segmentClass(forgotPasswordScore, index)} />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Confirm new password</label>
+                      <input
+                        type="password"
+                        className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                        placeholder="Repeat password"
+                        value={forgotForm.confirmPassword}
+                        onChange={(event) => setForgotForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isResettingPassword}
+                      className={`w-full rounded-sm px-4 py-3 text-sm font-semibold text-white transition ${
+                        isResettingPassword ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                      }`}
+                    >
+                      {isResettingPassword ? "Updating..." : "Update password"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setForgotAlert({ type: "", message: "" });
+                      }}
+                      className="mt-3 w-full rounded-sm border border-steel-300 px-4 py-3 text-sm font-semibold text-steel-700 transition hover:bg-steel-50"
+                    >
+                      Back to sign in
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleLoginSubmit}>
+                    <div className="mb-6">
+                      <h1 className="font-serif text-5xl leading-none text-steel-900">Welcome back.</h1>
+                      <p className="mt-3 text-sm text-steel-600">Use the login method you selected during signup.</p>
+                    </div>
+
+                    {loginAlert.message ? <div className={alertClass(loginAlert.type)}>{loginAlert.message}</div> : null}
+
+                    <div className="mb-4">
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Email</label>
+                      <input
+                        type="email"
+                        className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                        placeholder="you@company.com"
+                        value={loginForm.email}
+                        onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
+                      />
+                    </div>
+
+                    <div className="mb-4 flex gap-2">
+                      <button type="button" className={methodButtonClass(loginMethod === "password")} onClick={() => setLoginMethod("password")}>
+                        Password
+                      </button>
+                      <button type="button" className={methodButtonClass(loginMethod === "otp")} onClick={() => setLoginMethod("otp")}>
+                        OTP
+                      </button>
+                    </div>
+
+                    {loginMethod === "password" ? (
+                      <>
+                        <div className="mb-2">
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">Password</label>
+                          <input
+                            type="password"
+                            className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                            placeholder="********"
+                            value={loginForm.password}
+                            onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                          />
+                        </div>
+                        <div className="mb-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowForgotPassword(true);
+                              setForgotAlert({ type: "", message: "" });
+                              setForgotForm((prev) => ({ ...prev, email: loginForm.email || prev.email }));
+                            }}
+                            className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="mb-4">
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.06em] text-steel-600">OTP</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
+                            placeholder="6-digit OTP"
+                            value={loginForm.otp}
+                            onChange={(event) => setLoginForm((prev) => ({ ...prev, otp: event.target.value }))}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSendOtp("LOGIN")}
+                            disabled={isSendingLoginOtp}
+                            className={`rounded-sm px-4 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-white transition ${
+                              isSendingLoginOtp ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                            }`}
+                          >
+                            {isSendingLoginOtp ? "Sending..." : "Send OTP"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isLoginLoading}
+                      className={`w-full rounded-sm px-4 py-3 text-sm font-semibold text-white transition ${
+                        isLoginLoading ? "cursor-not-allowed bg-brand-400" : "bg-brand-500 hover:bg-brand-600"
+                      }`}
+                    >
+                      {isLoginLoading ? "Signing in..." : "Sign in"}
+                    </button>
+                  </form>
+                )
               ) : (
                 <form onSubmit={handleSignupSubmit}>
                   <div className="mb-6">
@@ -536,15 +766,19 @@ export default function AuthPage() {
                         <input
                           type="password"
                           className="w-full rounded-sm border border-steel-200 bg-steel-50 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:bg-white"
-                          placeholder="Min. 8 characters"
+                          placeholder={`Min. ${MIN_PASSWORD_LENGTH} chars, mixed case, number, special char`}
                           value={signupForm.password}
                           onChange={(event) => setSignupForm((prev) => ({ ...prev, password: event.target.value }))}
                         />
                         <div className="mt-2 flex gap-1">
                           {[0, 1, 2, 3].map((index) => (
-                            <span key={index} className={segmentClass(index)} />
+                            <span key={index} className={segmentClass(passwordScore, index)} />
                           ))}
                         </div>
+                        <p className="mt-2 text-[11px] leading-relaxed text-steel-600">
+                          Use at least {MIN_PASSWORD_LENGTH} characters with uppercase, lowercase, number and special
+                          character. Avoid name/email in password.
+                        </p>
                       </div>
 
                       <div className="mb-4">
@@ -598,7 +832,6 @@ export default function AuthPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl, productDetailPath } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 
@@ -267,6 +265,7 @@ export default function ProductDetails({ slugAndId = "" }) {
   const hasValue = (value) => value !== null && value !== undefined && String(value).trim() !== "";
   const hasTorqueRange = hasValue(product?.torque_min_nm) || hasValue(product?.torque_max_nm);
   const hasThrustRange = hasValue(product?.thrust_min_n) || hasValue(product?.thrust_max_n);
+  const performanceCardCount = Number(hasTorqueRange) + Number(hasThrustRange);
   const showPerformanceSection = hasTorqueRange || hasThrustRange;
 
   const openRequestModal = (document) => {
@@ -392,7 +391,6 @@ export default function ProductDetails({ slugAndId = "" }) {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-steel-600">
@@ -412,7 +410,7 @@ export default function ProductDetails({ slugAndId = "" }) {
 
           {!isLoading && !error && product ? (
             <>
-              <div className="border-y border-steel-200 p-4 sm:p-5 lg:p-6">
+              <div className="border-y border-steel-200 p-4 sm:p-5 lg:p-6 rounded-sm">
                 <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
                 <div className="px-1">
                   <div className="relative h-84 w-full overflow-hidden rounded-xl border border-steel-200 bg-steel-50 sm:h-104">
@@ -452,7 +450,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   ) : null}
                 </div>
 
-                <div className="px-1 sm:px-2 lg:border-l lg:border-steel-200 lg:pl-6">
+                <div className="flex h-full flex-col px-1 sm:px-2 lg:border-l lg:border-steel-200 lg:pl-6">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
@@ -469,9 +467,13 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </p>
 
                   {showPerformanceSection ? (
-                    <div className="mt-6 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                    <div
+                      className={`mt-6 grid grid-cols-1 gap-3 text-sm ${
+                        performanceCardCount > 1 ? "sm:grid-cols-2" : ""
+                      }`}
+                    >
                       {hasTorqueRange ? (
-                        <div className="border border-steel-200 bg-steel-50 px-4 py-3">
+                        <div className="border border-steel-200 bg-white px-4 py-3 rounded-sm">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-steel-600">Torque Range</p>
                           <p className="mt-1 text-base font-bold text-steel-900">
                             {product.torque_min_nm ?? "-"} to {product.torque_max_nm ?? "-"} Nm
@@ -479,7 +481,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                         </div>
                       ) : null}
                       {hasThrustRange ? (
-                        <div className="border border-steel-200 bg-steel-50 px-4 py-3">
+                        <div className="border border-steel-200 bg-white px-4 py-3 rounded-sm">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-steel-600">Thrust Range</p>
                           <p className="mt-1 text-base font-bold text-steel-900">
                             {product.thrust_min_n ?? "-"} to {product.thrust_max_n ?? "-"} N
@@ -488,6 +490,15 @@ export default function ProductDetails({ slugAndId = "" }) {
                       ) : null}
                     </div>
                   ) : null}
+
+                  <div className="mt-6 pt-1 lg:mt-8">
+                    <Link
+                      href="/request-quote"
+                      className="inline-flex items-center rounded-md border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-500 hover:text-white"
+                    >
+                      Request a Quote
+                    </Link>
+                  </div>
                 </div>
               </div>
               </div>
@@ -538,7 +549,7 @@ export default function ProductDetails({ slugAndId = "" }) {
                   </button>
                 </div>
 
-                <div className="p-5 sm:p-6">
+                <div className="p-5 sm:p-6 ">
                   <div key={activeTab} className="tab-panel-enter">
                     {activeTab === TABS.features ? (
                       features.length ? (
@@ -794,9 +805,6 @@ export default function ProductDetails({ slugAndId = "" }) {
           </div>
         </div>
       ) : null}
-      <div className="-mt-16">
-        <Footer />
-      </div>
     </>
   );
 }

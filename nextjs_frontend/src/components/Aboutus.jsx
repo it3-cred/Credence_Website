@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Link from "next/link";
 
 const journeySteps = [
@@ -82,8 +80,8 @@ const journeySteps = [
 
 export default function Aboutus() {
   const [activeJourneyIndex, setActiveJourneyIndex] = useState(0);
-  const timelineProgress = useMemo(
-    () => `${((activeJourneyIndex + 1) / journeySteps.length) * 100}%`,
+  const timelineProgressScale = useMemo(
+    () => (activeJourneyIndex + 1) / journeySteps.length,
     [activeJourneyIndex],
   );
 
@@ -155,7 +153,6 @@ export default function Aboutus() {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="border-b border-steel-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
@@ -269,9 +266,9 @@ export default function Aboutus() {
             <div className="relative">
               <div className="about-timeline-line absolute left-[13px] top-0 h-full w-px bg-steel-200" aria-hidden="true" />
               <div
-                className="about-timeline-progress absolute left-[13px] top-0 w-px bg-brand-300"
+                className="about-timeline-progress absolute left-[13px] top-0 h-full w-px origin-top bg-brand-300"
                 aria-hidden="true"
-                style={{ height: timelineProgress }}
+                style={{ transform: `scaleY(${timelineProgressScale})` }}
               />
               <div className="space-y-6 sm:space-y-8">
                 {journeySteps.map((step, index) => (
@@ -395,9 +392,6 @@ export default function Aboutus() {
         </section>
       </main>
 
-      <div className="-mt-16">
-        <Footer />
-      </div>
 
       <style jsx>{`
         .reveal-on-scroll {
@@ -428,8 +422,9 @@ export default function Aboutus() {
         }
 
         .about-timeline-progress {
-          transition: height 420ms cubic-bezier(0.22, 1, 0.36, 1);
+          transition: transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
           box-shadow: 0 0 0 1px rgba(255, 35, 1, 0.04);
+          will-change: transform;
         }
 
         [aria-current="step"] > span {

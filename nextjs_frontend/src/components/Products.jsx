@@ -4,8 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 
@@ -25,6 +23,11 @@ function normalizeTorqueBounds(rawMin, rawMax) {
     min: hasMin ? String(minValue) : "",
     max: hasMax ? String(maxValue) : "",
   };
+}
+
+function normalizePowerSourceSlug(slug) {
+  const value = String(slug || "").trim().toLowerCase();
+  return value === "all" ? "" : String(slug || "").trim();
 }
 
 function buildProductsUrl({ powerSource, industries, torqueMin, torqueMax, thrustMin, thrustMax }) {
@@ -49,7 +52,9 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selectedPowerSource, setSelectedPowerSource] = useState(initialPowerSourceSlug);
+  const [selectedPowerSource, setSelectedPowerSource] = useState(
+    normalizePowerSourceSlug(initialPowerSourceSlug),
+  );
   const [selectedIndustries, setSelectedIndustries] = useState([]);
   const [torqueMin, setTorqueMin] = useState("");
   const [torqueMax, setTorqueMax] = useState("");
@@ -60,7 +65,7 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
   const lastFilterTrackSignatureRef = useRef("");
 
   useEffect(() => {
-    setSelectedPowerSource(initialPowerSourceSlug || "");
+    setSelectedPowerSource(normalizePowerSourceSlug(initialPowerSourceSlug));
   }, [initialPowerSourceSlug]);
 
   const searchParamsKey = searchParams?.toString() || "";
@@ -275,7 +280,6 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-steel-200 pb-2">
@@ -547,9 +551,6 @@ export default function ProductsPage({ initialPowerSourceSlug = "" }) {
           </div>
         </section>
       </main>
-      <div className="-mt-16">
-        <Footer />
-      </div>
     </>
   );
 }

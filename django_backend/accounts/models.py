@@ -5,6 +5,13 @@ from django.utils import timezone
 
 
 class User(models.Model):
+    AUTH_PASSWORD = "PASSWORD"
+    AUTH_OTP = "OTP"
+    AUTH_PREFERENCE_CHOICES = [
+        (AUTH_PASSWORD, "Password"),
+        (AUTH_OTP, "OTP"),
+    ]
+
     name = models.CharField(
         max_length=150,
         validators=[
@@ -14,6 +21,11 @@ class User(models.Model):
     )
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=128, blank=True, default="")
+    auth_preference = models.CharField(
+        max_length=16,
+        choices=AUTH_PREFERENCE_CHOICES,
+        default=AUTH_PASSWORD,
+    )
     company_name = models.CharField(
         max_length=200,
         blank=True,
@@ -54,9 +66,11 @@ class User(models.Model):
 class EmailOTP(models.Model):
     PURPOSE_SIGNUP = "SIGNUP"
     PURPOSE_LOGIN = "LOGIN"
+    PURPOSE_PASSWORD_RESET = "PASSWORD_RESET"
     PURPOSE_CHOICES = [
         (PURPOSE_SIGNUP, "Signup"),
         (PURPOSE_LOGIN, "Login"),
+        (PURPOSE_PASSWORD_RESET, "Password Reset"),
     ]
 
     email = models.EmailField()

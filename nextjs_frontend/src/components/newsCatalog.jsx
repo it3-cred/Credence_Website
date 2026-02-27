@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { API_BASE_URL, API_ENDPOINTS, apiUrl } from "@/lib/api";
+import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
 function withMediaBase(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/")) return `${API_BASE_URL}${url}`;
-  return `${API_BASE_URL}/${url}`;
+  return url.startsWith("/") ? apiUrl(url) : apiUrl(`/${url}`);
 }
 
 function normalizeImageList(raw) {
@@ -152,7 +149,6 @@ export default function NewsCatalog() {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
           <div className="border-b border-steel-200 pb-4 sm:pb-5">
@@ -368,9 +364,6 @@ export default function NewsCatalog() {
           ) : null}
         </section>
       </main>
-      <div className="-mt-16">
-        <Footer />
-      </div>
     </>
   );
 }

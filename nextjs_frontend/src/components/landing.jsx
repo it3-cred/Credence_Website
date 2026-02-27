@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
@@ -257,7 +255,6 @@ export default function LandingPage() {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="w-full">
           <div
@@ -573,9 +570,6 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <div className="-mt-16">
-        <Footer />
-      </div>
     </>
   );
 }

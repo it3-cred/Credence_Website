@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { API_BASE_URL, API_ENDPOINTS, apiUrl } from "@/lib/api";
+import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -14,8 +12,7 @@ function normalizeType(type) {
 function withMediaBase(url) {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/")) return `${API_BASE_URL}${url}`;
-  return `${API_BASE_URL}/${url}`;
+  return url.startsWith("/") ? apiUrl(url) : apiUrl(`/${url}`);
 }
 
 function normalizeImageList(raw, selectedType) {
@@ -177,7 +174,6 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700">
@@ -339,9 +335,6 @@ export default function ContentTemplate({ type = "news", id = "1" }) {
           ) : null}
         </section>
       </main>
-      <div className="-mt-16">
-        <Footer />
-      </div>
     </>
   );
 }

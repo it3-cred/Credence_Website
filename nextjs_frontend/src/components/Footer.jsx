@@ -25,7 +25,7 @@ const siteLinks = [
 
 function Footer() {
   return (
-    <footer className="mt-10 border-t-2 border-brand-200 bg-steel-50 sm:mt-16">
+    <footer className="border-t-2 border-brand-200 bg-steel-50">
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
         <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr_1.2fr] lg:gap-8">
           <section className="border-b border-brand-200 pb-4 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-7">

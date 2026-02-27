@@ -34,7 +34,8 @@ SECRET_KEY = "django-insecure-dnr8m2hgispo6542_nd^y5207mz&=qxjb8***mr=q#p(8#q2b=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+LAN_DEV_HOSTS = [f"192.168.1.{ip}" for ip in range(1, 255)]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", *LAN_DEV_HOSTS]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -48,6 +49,12 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 # Only needed if you use SessionAuth from Next.js with cookies:
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    *[f"http://192.168.1.{ip}:3000" for ip in range(1, 255)],
+]
 
 # Application definition
 
@@ -184,6 +191,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 12,
 }
+
+# Auth policy
+AUTH_MIN_PASSWORD_LENGTH = env.int("AUTH_MIN_PASSWORD_LENGTH", default=10)
 
 # OTP / email delivery
 _raw_email_otp_expiry = env("EMAIL_OTP_EXPIRY_MINUTES", default="10")

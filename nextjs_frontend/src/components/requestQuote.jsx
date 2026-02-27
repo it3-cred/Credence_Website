@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { API_ENDPOINTS, apiUrl } from "@/lib/api";
 
 const inquiryReasons = [
@@ -70,7 +68,6 @@ export default function RequestQuotePage() {
 
   return (
     <>
-      <Navbar />
       <main className="bg-steel-50">
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <p className="text-sm font-bold uppercase tracking-widest text-brand-600">
@@ -260,7 +257,6 @@ export default function RequestQuotePage() {
           </form>
         </section>
       </main>
-      <Footer />
     </>
   );
 }
