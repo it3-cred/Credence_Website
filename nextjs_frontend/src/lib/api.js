@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   authLogin: "/api/auth/login",
   authPasswordForgot: "/api/auth/password/forgot",
   authPasswordReset: "/api/auth/password/reset",
+  search: "/api/search",
   contentAnnouncementRibbon: "/api/content/announcement-ribbon",
   contentNews: "/api/content/news",
   contentAchievements: "/api/content/achievements",

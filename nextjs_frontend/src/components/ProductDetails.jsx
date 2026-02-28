@@ -243,10 +243,50 @@ export default function ProductDetails({ slugAndId = "" }) {
 
   const imageUrls = product?.image_urls?.length ? product.image_urls : [product?.image_url || FALLBACK_IMAGE];
   const features = Array.isArray(product?.features) ? product.features : [];
-  const specifications =
-    product?.specification && typeof product.specification === "object" && !Array.isArray(product.specification)
-      ? Object.entries(product.specification)
-      : [];
+  const specifications = useMemo(() => {
+    const normalizeItem = (key, value) => {
+      const keyText = String(key || "").trim();
+      if (!keyText) return null;
+      return { key: keyText, value };
+    };
+
+    if (Array.isArray(product?.specification_items) && product.specification_items.length) {
+      return product.specification_items
+        .map((entry) => normalizeItem(entry?.key, entry?.value))
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(product?.specification)) {
+      const rows = [];
+      for (const entry of product.specification) {
+        if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+          if ("key" in entry && "value" in entry) {
+            const normalized = normalizeItem(entry.key, entry.value);
+            if (normalized) rows.push(normalized);
+            continue;
+          }
+          for (const [key, value] of Object.entries(entry)) {
+            const normalized = normalizeItem(key, value);
+            if (normalized) rows.push(normalized);
+          }
+          continue;
+        }
+        if (Array.isArray(entry) && entry.length >= 2) {
+          const normalized = normalizeItem(entry[0], entry[1]);
+          if (normalized) rows.push(normalized);
+        }
+      }
+      return rows;
+    }
+
+    if (product?.specification && typeof product.specification === "object") {
+      return Object.entries(product.specification)
+        .map(([key, value]) => normalizeItem(key, value))
+        .filter(Boolean);
+    }
+
+    return [];
+  }, [product?.specification, product?.specification_items]);
   const documents = useMemo(
     () => (Array.isArray(product?.documents) ? product.documents : []),
     [product?.documents],
@@ -584,8 +624,8 @@ export default function ProductDetails({ slugAndId = "" }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {specifications.map(([key, value], index) => (
-                                <tr key={key} className={index % 2 === 0 ? "bg-white" : "bg-steel-50"}>
+                              {specifications.map(({ key, value }, index) => (
+                                <tr key={`${key}-${index}`} className={index % 2 === 0 ? "bg-white" : "bg-steel-50"}>
                                   <td className="border-b border-r border-steel-200 px-4 py-3 font-semibold text-steel-700 capitalize">
                                     {key.replaceAll("_", " ")}
                                   </td>

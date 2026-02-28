@@ -13,6 +13,43 @@ def _build_file_url(request, file_field):
     return request.build_absolute_uri(file_field.url)
 
 
+def _normalize_specification_items(specification_value):
+    items = []
+
+    if isinstance(specification_value, dict):
+        for key, value in specification_value.items():
+            key_text = str(key).strip()
+            if not key_text:
+                continue
+            items.append({"key": key_text, "value": value})
+        return items
+
+    if not isinstance(specification_value, list):
+        return items
+
+    for entry in specification_value:
+        if isinstance(entry, dict):
+            if "key" in entry and "value" in entry:
+                key_text = str(entry.get("key", "")).strip()
+                if key_text:
+                    items.append({"key": key_text, "value": entry.get("value")})
+                continue
+
+            for key, value in entry.items():
+                key_text = str(key).strip()
+                if not key_text:
+                    continue
+                items.append({"key": key_text, "value": value})
+            continue
+
+        if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+            key_text = str(entry[0]).strip()
+            if key_text:
+                items.append({"key": key_text, "value": entry[1]})
+
+    return items
+
+
 @api_view(["GET"])
 def get_products(request):
     power_source_slug = request.GET.get("power_source", "").strip()
@@ -146,6 +183,7 @@ def get_products(request):
                 "thrust_min_n": item.thrust_min_n,
                 "thrust_max_n": item.thrust_max_n,
                 "specification": item.specification,
+                "specification_items": _normalize_specification_items(item.specification),
                 "features": item.features,
                 "created_at": item.created_at,
                 "updated_at": item.updated_at,
@@ -237,6 +275,7 @@ def get_product_detail(request, slug, product_id):
             "thrust_min_n": product.thrust_min_n,
             "thrust_max_n": product.thrust_max_n,
             "specification": product.specification,
+            "specification_items": _normalize_specification_items(product.specification),
             "features": product.features,
             "documents": documents_data,
             "created_at": product.created_at,

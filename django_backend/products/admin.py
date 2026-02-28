@@ -4,7 +4,12 @@ from .models import Industry, PowerSource, Product, ProductCatalogue, ProductIma
 
 class ProductIndustryInline(admin.TabularInline):
     model = ProductIndustry
-    extra = 1
+    extra = 0
+    can_delete = True
+    show_change_link = True
+    autocomplete_fields = ("industry",)
+    verbose_name = "Industry Mapping"
+    verbose_name_plural = "Industry Mappings"
 
 
 class ProductImageInline(admin.TabularInline):
@@ -49,6 +54,7 @@ class ProductAdmin(admin.ModelAdmin):
         "features",
     )
     inlines = [ProductImageInline, ProductIndustryInline]
+    autocomplete_fields = ("power_source",)
 
 
 @admin.register(ProductCatalogue)
@@ -62,6 +68,8 @@ class ProductCatalogueAdmin(admin.ModelAdmin):
 class ProductIndustryAdmin(admin.ModelAdmin):
     list_display = ("id", "product", "industry")
     search_fields = ("product__name", "industry__name")
+    autocomplete_fields = ("product", "industry")
+    actions = ["delete_selected"]
 
 
 @admin.register(ProductImage)

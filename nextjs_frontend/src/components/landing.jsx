@@ -307,7 +307,7 @@ export default function LandingPage() {
             <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-700">
-                  Latest News & Achievements
+                  News & Achievements
                 </p>
                 <Link
                   href="/news"

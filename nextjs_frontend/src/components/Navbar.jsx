@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,6 +26,16 @@ function Navbar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [isRibbonClosed, setIsRibbonClosed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState({
+    products: [],
+    news: [],
+    achievements: [],
+    documents: [],
+  });
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,6 +149,79 @@ function Navbar() {
     });
   };
 
+  const isAnySearchOpen = isDesktopSearchOpen || isSearchOpen;
+  const normalizedSearchQuery = searchQuery.trim();
+
+  useEffect(() => {
+    if (!isAnySearchOpen) {
+      setIsSearchLoading(false);
+      setSearchError("");
+      setHasSearched(false);
+      return;
+    }
+
+    if (normalizedSearchQuery.length < 2) {
+      setIsSearchLoading(false);
+      setSearchError("");
+      setHasSearched(false);
+      setSearchResults({ products: [], news: [], achievements: [], documents: [] });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsSearchLoading(true);
+        setSearchError("");
+        const response = await fetch(
+          `${apiUrl(API_ENDPOINTS.search)}?q=${encodeURIComponent(normalizedSearchQuery)}&limit=6`,
+          {
+            method: "GET",
+            signal: controller.signal,
+          },
+        );
+        if (!response.ok) {
+          throw new Error("Failed to load search results.");
+        }
+        const payload = await response.json();
+        setSearchResults({
+          products: Array.isArray(payload?.results?.products) ? payload.results.products : [],
+          news: Array.isArray(payload?.results?.news) ? payload.results.news : [],
+          achievements: Array.isArray(payload?.results?.achievements) ? payload.results.achievements : [],
+          documents: Array.isArray(payload?.results?.documents) ? payload.results.documents : [],
+        });
+        setHasSearched(true);
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          setSearchError("Unable to search right now.");
+          setHasSearched(true);
+        }
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }, 260);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [isAnySearchOpen, normalizedSearchQuery]);
+
+  const searchResultCount = useMemo(
+    () =>
+      (searchResults.products?.length || 0) +
+      (searchResults.news?.length || 0) +
+      (searchResults.achievements?.length || 0) +
+      (searchResults.documents?.length || 0),
+    [searchResults],
+  );
+
+  const handleSearchResultClick = () => {
+    setIsSearchOpen(false);
+    setIsDesktopSearchOpen(false);
+    setIsOpen(false);
+  };
+
   const hasRibbon = !isRibbonClosed && announcements.length > 0;
   const hasMultipleAnnouncements = announcements.length > 1;
   const latestAnnouncement = announcements[0] || null;
@@ -148,6 +231,135 @@ function Navbar() {
     if (!href || !href.startsWith("/") || !pathname) return false;
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const renderSearchResults = ({ mobile = false } = {}) => {
+    if (!isAnySearchOpen) return null;
+    if (!normalizedSearchQuery && !isSearchLoading && !hasSearched) return null;
+
+    const panelClass = mobile
+      ? "mt-2 rounded-xl border border-steel-200 bg-white p-2 shadow-[0_10px_24px_rgba(23,28,34,0.10)]"
+      : "absolute right-0 top-11 z-60 w-[min(32rem,80vw)] rounded-xl border border-steel-200 bg-white p-2 shadow-[0_10px_24px_rgba(23,28,34,0.10)]";
+
+    return (
+      <div className={panelClass}>
+        {normalizedSearchQuery.length < 2 ? (
+          <p className="px-2 py-2 text-xs font-medium text-steel-500">
+            Type at least 2 characters to search.
+          </p>
+        ) : null}
+
+        {isSearchLoading ? (
+          <p className="px-2 py-2 text-xs font-medium text-steel-500">Searching...</p>
+        ) : null}
+
+        {!isSearchLoading && searchError ? (
+          <p className="px-2 py-2 text-xs font-medium text-red-600">{searchError}</p>
+        ) : null}
+
+        {!isSearchLoading && !searchError && hasSearched && searchResultCount === 0 ? (
+          <p className="px-2 py-2 text-xs font-medium text-steel-500">
+            No results found for "{normalizedSearchQuery}".
+          </p>
+        ) : null}
+
+        {!isSearchLoading && !searchError && searchResultCount > 0 ? (
+          <div className="max-h-96 space-y-3 overflow-y-auto px-1 py-1">
+            {searchResults.products.length ? (
+              <div>
+                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+                  Products
+                </p>
+                <div className="space-y-1">
+                  {searchResults.products.map((item) => (
+                    <Link
+                      key={`search-product-${item.id}`}
+                      href={`/product/${encodeURIComponent(item.slug || "product")}-${encodeURIComponent(item.id)}`}
+                      onClick={handleSearchResultClick}
+                      className="block rounded-lg px-2 py-2 transition hover:bg-steel-50"
+                    >
+                      <p className="text-sm font-semibold text-steel-900">{item.name}</p>
+                      {item.summary ? (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-steel-600">{item.summary}</p>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {searchResults.news.length ? (
+              <div>
+                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+                  News
+                </p>
+                <div className="space-y-1">
+                  {searchResults.news.map((item) => (
+                    <Link
+                      key={`search-news-${item.id}`}
+                      href={`/news/${encodeURIComponent(item.slug || "news")}-${encodeURIComponent(item.id)}`}
+                      onClick={handleSearchResultClick}
+                      className="block rounded-lg px-2 py-2 transition hover:bg-steel-50"
+                    >
+                      <p className="text-sm font-semibold text-steel-900">{item.title}</p>
+                      {item.summary ? (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-steel-600">{item.summary}</p>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {searchResults.achievements.length ? (
+              <div>
+                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+                  Achievements
+                </p>
+                <div className="space-y-1">
+                  {searchResults.achievements.map((item) => (
+                    <Link
+                      key={`search-achievement-${item.id}`}
+                      href={`/achievement/${encodeURIComponent(item.slug || "achievement")}-${encodeURIComponent(item.id)}`}
+                      onClick={handleSearchResultClick}
+                      className="block rounded-lg px-2 py-2 transition hover:bg-steel-50"
+                    >
+                      <p className="text-sm font-semibold text-steel-900">{item.title}</p>
+                      {item.summary ? (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-steel-600">{item.summary}</p>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {searchResults.documents.length ? (
+              <div>
+                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+                  Product Documents
+                </p>
+                <div className="space-y-1">
+                  {searchResults.documents.map((item) => (
+                    <Link
+                      key={`search-document-${item.id}`}
+                      href={`/product/${encodeURIComponent(item.product_slug || "product")}-${encodeURIComponent(item.product_id)}`}
+                      onClick={handleSearchResultClick}
+                      className="block rounded-lg px-2 py-2 transition hover:bg-steel-50"
+                    >
+                      <p className="text-sm font-semibold text-steel-900">{item.title}</p>
+                      <p className="mt-0.5 text-xs text-steel-600">
+                        {item.product_name} • {item.doc_type}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
   };
   return (
     <header className="sticky top-0 z-50 border-b border-steel-200/90 bg-white/95 shadow-[0_1px_0_rgba(23,28,34,0.04)] backdrop-blur-md">
@@ -261,11 +473,22 @@ function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-2.5 min-[1200px]:flex">
-          <div className="flex items-center rounded-xl  p-1 transition duration-300">
+          <div className="relative flex items-center rounded-xl p-1 transition duration-300">
             <button
               type="button"
               className="inline-flex h-9 w-9 cursor-pointer items-center justify-center border border-steel-200 bg-white rounded-lg text-zinc-700 transition duration-200 hover:bg-steel-50/70 hover:text-brand-600"
-              onClick={() => setIsDesktopSearchOpen((prev) => !prev)}
+              onClick={() =>
+                setIsDesktopSearchOpen((prev) => {
+                  const next = !prev;
+                  if (!next) {
+                    setSearchQuery("");
+                    setSearchResults({ products: [], news: [], achievements: [], documents: [] });
+                    setHasSearched(false);
+                    setSearchError("");
+                  }
+                  return next;
+                })
+              }
               aria-expanded={isDesktopSearchOpen}
               aria-label="Toggle desktop search"
             >
@@ -287,10 +510,13 @@ function Navbar() {
                 <input
                   type="text"
                   placeholder="Search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   className="w-full bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-500"
                 />
               </div>
             </div>
+            {isDesktopSearchOpen ? renderSearchResults() : null}
           </div>
           {isAuthenticated ? (
             <div className="relative">
@@ -359,7 +585,18 @@ function Navbar() {
           <button
             type="button"
             className="inline-flex items-center rounded-lg p-2 text-zinc-700 transition hover:bg-steel-100"
-            onClick={() => setIsSearchOpen((prev) => !prev)}
+            onClick={() =>
+              setIsSearchOpen((prev) => {
+                const next = !prev;
+                if (!next) {
+                  setSearchQuery("");
+                  setSearchResults({ products: [], news: [], achievements: [], documents: [] });
+                  setHasSearched(false);
+                  setSearchError("");
+                }
+                return next;
+              })
+            }
             aria-expanded={isSearchOpen}
             aria-label="Toggle search"
           >
@@ -423,9 +660,12 @@ function Navbar() {
             <input
               type="text"
               placeholder="Search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
               className="w-full bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-500"
             />
           </div>
+          {renderSearchResults({ mobile: true })}
         </div>
       )}
 

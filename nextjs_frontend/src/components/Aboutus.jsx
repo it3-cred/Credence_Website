@@ -45,7 +45,7 @@ const journeySteps = [
     phase: "Engineering Differentiation",
     title: "Built safer and longer-life actuator designs",
     body:
-      "Credence introduced improved design features such as Namur Solenoid Mounting, Tamper Proof Actuator Design and Multi Misalignment Absorbing Connections (Patent Pending). These design upgrades improve safety and extend actuator life in real operating conditions.",
+      "Credence introduced patented design features such as Namur Solenoid Mounting, Tamper Proof Actuator Design and Multi Misalignment Absorbing Connections in their Actuators. These design upgrades improve safety and extend actuator life in real operating conditions.",
     highlights: [
       "Namur Solenoid Mounting",
       "Tamper Proof Actuator Design",
